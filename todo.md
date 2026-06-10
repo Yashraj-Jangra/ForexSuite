@@ -1,0 +1,22 @@
+# VaultBill Project Progress
+
+- [ ] Project Setup & Monorepo Configuration
+  - [ ] Initialize git repository
+  - [ ] Initialize npm workspace / monorepo structure
+  - [ ] Create core configuration files (`tsconfig.json`, `.gitignore`, `eslint.config.js`)
+- [ ] Database Setup
+  - [ ] Configure PostgreSQL with Docker Compose
+  - [ ] Setup Drizzle ORM schema & migrations
+- [ ] Backend API Development (Fastify)
+  - [ ] Auth module (Better Auth integration)
+  - [ ] Currency rate engine (Frankfurter + RBI APIs)
+  - [ ] Tax engine
+  - [ ] Invoice & PDF generator
+- [ ] Frontend Development (Next.js 14)
+  - [ ] Set up Next.js app with Tailwind CSS + shadcn/ui
+  - [ ] Multi-tenant workspace dashboard
+  - [ ] Invoice builder interface
+- [ ] CI/CD & Self-Hosting Pipeline
+  - [ ] Dockerfiles for services
+  - [ ] GitHub Actions CI workflow
+  - [ ] Deployment docs (Coolify/Docker Compose)
