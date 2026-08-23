@@ -1,0 +1,3 @@
+# Add illustration SVG files here.
+# Example: hero.svg, dashboard.svg, invoices.svg, etc.
+# The <Illustration> component gracefully hides missing images.

@@ -1,0 +1,146 @@
+:root {
+  /* ------------------------------------------------------------------ */
+  /*  LIGHT THEME (default)                                              */
+  /* ------------------------------------------------------------------ */
+  --background: 40 30% 98%;
+  --foreground: 24 10% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 24 10% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 24 10% 15%;
+
+  /* accent — sage green palette, overridable at runtime */
+  --accent-h: 155;
+  --accent-s: 40%;
+  --accent-l: 35%;
+  --accent: var(--accent-h) var(--accent-s) var(--accent-l);
+  --primary: var(--accent);
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 40 20% 94%;
+  --secondary-foreground: 24 10% 15%;
+
+  --muted: 40 20% 94%;
+  --muted-foreground: 30 8% 42%;
+
+  --accent-soft: var(--accent-h) var(--accent-s) 94%;
+  --accent-soft-foreground: var(--accent-h) var(--accent-s) 20%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 40% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 36 100% 50%;
+  --warning-foreground: 24 10% 15%;
+
+  --border: 30 8% 88%;
+  --input: 30 8% 88%;
+  --ring: var(--accent);
+
+  --radius: 1rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-full: 9999px;
+
+  /* shadows */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 20px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 12px 40px -8px rgb(0 0 0 / 0.08);
+  --shadow-xl: 0 20px 60px -12px rgb(0 0 0 / 0.10);
+
+  /* surfaces */
+  --surface-elevated: 0 0% 100%;
+  --surface-overlay: 0 0% 100% / 0.8;
+
+  /* grain */
+  --grain-opacity: 0.35;
+}
+
+.dark {
+  /* ------------------------------------------------------------------ */
+  /*  DARK THEME                                                         */
+  /* ------------------------------------------------------------------ */
+  --background: 150 15% 4%;
+  --foreground: 40 30% 93%;
+  --card: 150 12% 7%;
+  --card-foreground: 40 30% 93%;
+  --popover: 150 12% 7%;
+  --popover-foreground: 40 30% 93%;
+
+  --accent-h: 155;
+  --accent-s: 50%;
+  --accent-l: 48%;
+  --accent: var(--accent-h) var(--accent-s) var(--accent-l);
+  --primary: var(--accent);
+  --primary-foreground: 150 30% 6%;
+
+  --secondary: 150 10% 12%;
+  --secondary-foreground: 40 30% 93%;
+
+  --muted: 150 10% 12%;
+  --muted-foreground: 150 8% 62%;
+
+  --accent-soft: var(--accent-h) var(--accent-s) 12%;
+  --accent-soft-foreground: var(--accent-h) var(--accent-s) 65%;
+
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 40% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 36 100% 48%;
+  --warning-foreground: 24 10% 15%;
+
+  --border: 150 10% 15%;
+  --input: 150 10% 15%;
+  --ring: var(--accent);
+
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 20px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 12px 40px -8px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 60px -12px rgb(0 0 0 / 0.5);
+
+  --surface-elevated: 150 12% 9%;
+  --surface-overlay: 150 12% 7% / 0.85;
+}
+
+/* ------------------------------------------------------------------ */
+/*  ACCENT PRESET OVERRIDES (applied via [data-accent="..."] on html)  */
+/* ------------------------------------------------------------------ */
+[data-accent="sage"] {
+  --accent-h: 155; --accent-s: 40%; --accent-l: 35%;
+}
+[data-accent="mint"] {
+  --accent-h: 160; --accent-s: 55%; --accent-l: 40%;
+}
+[data-accent="teal"] {
+  --accent-h: 175; --accent-s: 50%; --accent-l: 38%;
+}
+[data-accent="olive"] {
+  --accent-h: 65;  --accent-s: 30%; --accent-l: 35%;
+}
+[data-accent="forest"] {
+  --accent-h: 145; --accent-s: 35%; --accent-l: 28%;
+}
+[data-accent="emerald"] {
+  --accent-h: 150; --accent-s: 50%; --accent-l: 42%;
+}
+
+.dark[data-accent="sage"]   { --accent-l: 48%; }
+.dark[data-accent="mint"]   { --accent-l: 50%; }
+.dark[data-accent="teal"]   { --accent-l: 48%; }
+.dark[data-accent="olive"]  { --accent-l: 47%; }
+.dark[data-accent="forest"] { --accent-l: 40%; }
+.dark[data-accent="emerald"]{ --accent-l: 52%; }
+
+/* ------------------------------------------------------------------ */
+/*  RADIUS OVERRIDES                                                   */
+/* ------------------------------------------------------------------ */
+[data-radius="sharp"]  { --radius: 0.375rem; --radius-sm: 0.25rem; --radius-md: 0.375rem; --radius-lg: 0.5rem; --radius-xl: 0.75rem; }
+[data-radius="rounded"]{ --radius: 1rem;     --radius-sm: 0.5rem;  --radius-md: 0.75rem; --radius-lg: 1.25rem; --radius-xl: 1.75rem; }
+[data-radius="pill"]   { --radius: 2rem;     --radius-sm: 1rem;    --radius-md: 1.5rem;  --radius-lg: 2rem;    --radius-xl: 2.5rem; }

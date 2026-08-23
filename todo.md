@@ -1,22 +1,35 @@
 # VaultBill Project Progress
 
-- [ ] Project Setup & Monorepo Configuration
-  - [ ] Initialize git repository
-  - [ ] Initialize npm workspace / monorepo structure
-  - [ ] Create core configuration files (`tsconfig.json`, `.gitignore`, `eslint.config.js`)
-- [ ] Database Setup
-  - [ ] Configure PostgreSQL with Docker Compose
-  - [ ] Setup Drizzle ORM schema & migrations
+- [x] Project Setup & Monorepo Configuration
+  - [x] Initialize git repository
+  - [x] Initialize npm workspace / monorepo structure
+  - [x] Create core configuration files (`tsconfig.json`, `.gitignore`, `eslint.config.js`)
+- [x] Database Setup
+  - [x] Configure PostgreSQL with Docker Compose
+  - [x] Setup Drizzle ORM schema & migrations (Core)
+  - [ ] Setup compliance tables (remittances, forex_transactions, fircs, lut_registrations)
 - [ ] Backend API Development (Fastify)
+  - [x] Scaffold Fastify API with health endpoint
   - [ ] Auth module (Better Auth integration)
   - [ ] Currency rate engine (Frankfurter + RBI APIs)
-  - [ ] Tax engine
-  - [ ] Invoice & PDF generator
+  - [ ] Invoice & PDF generator (with zero-rated GST LUT support)
+  - [ ] Tax & TCS engine (GST splits and progressive LRS TCS)
+  - [ ] Compliance engine (Form A2 generator, FLM-8 statements, FEMA alerts, FIRC linking)
 - [ ] Frontend Development (Next.js 14)
-  - [ ] Set up Next.js app with Tailwind CSS + shadcn/ui
-  - [ ] Multi-tenant workspace dashboard
-  - [ ] Invoice builder interface
+  - [x] Set up Next.js app with Tailwind CSS + shadcn/ui
+  - [ ] Multi-tenant workspace dashboard (with compliance alert widgets)
+  - [ ] Invoice builder interface (Standard & Export invoice modes)
+  - [ ] Compliance pages (/compliance/lrs, /compliance/flm8, /compliance/firc, /compliance/lut)
 - [ ] CI/CD & Self-Hosting Pipeline
   - [ ] Dockerfiles for services
   - [ ] GitHub Actions CI workflow
-  - [ ] Deployment docs (Coolify/Docker Compose)
+  - [ ] Deployment docs (Docker Compose manual)
+
+### Build 0 — Foundations ✓
+- [x] pnpm + Turborepo monorepo (apps/api, apps/web, apps/worker, packages/db, shared, config, pdf)
+- [x] Dev Docker Compose (PostgreSQL 16, Redis 7, MinIO, Mailpit)
+- [x] Drizzle ORM schema (public: tenants, users, tenant_members; tenant: customers, invoices, currencies, etc.)
+- [x] Better Auth Fastify scaffold
+- [x] Welcome page with glassmorphism UI
+- [x] TypeScript typecheck passes
+- [x] Migration generated and pushed to dev DB

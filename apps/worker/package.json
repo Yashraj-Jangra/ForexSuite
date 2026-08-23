@@ -1,0 +1,31 @@
+{
+  "name": "@vaultbill/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vaultbill/config": "workspace:*",
+    "@vaultbill/db": "workspace:*",
+    "@vaultbill/pdf": "workspace:*",
+    "@vaultbill/shared": "workspace:*",
+    "bullmq": "^5.0.0",
+    "dotenv": "^17.4.2",
+    "ioredis": "^5.0.0",
+    "resend": "^4.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
