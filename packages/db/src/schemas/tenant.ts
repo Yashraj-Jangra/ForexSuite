@@ -98,3 +98,15 @@ export const vendors = pgTable('vendors', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const lutRegistrations = pgTable('lut_registrations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  referenceNumber: text('reference_number').notNull(),
+  issuedDate: date('issued_date').notNull(),
+  expiryDate: date('expiry_date').notNull(),
+  issuingAuthority: text('issuing_authority').notNull(),
+  pdfPath: text('pdf_path'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

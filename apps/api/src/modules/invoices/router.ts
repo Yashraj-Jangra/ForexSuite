@@ -1,13 +1,16 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
-import { invoices, invoiceItems, customers } from '@vaultbill/db/schemas/tenant';
+import { invoices, invoiceItems, customers, lutRegistrations } from '@vaultbill/db/schemas/tenant';
 import { db } from '@vaultbill/db';
-import { eq, desc, and, like, sql } from 'drizzle-orm';
+import { eq, desc, like, sql, and, gt } from 'drizzle-orm';
+import { getHsnRate } from '@vaultbill/shared';
 
 const lineItemInput = z.object({
   description: z.string().min(1),
   quantity: z.coerce.number().positive(),
   unitPrice: z.coerce.number().positive(),
+  hsnCode: z.string().optional(),
+  gstRate: z.coerce.number().optional(),
 });
 
 const createInvoiceInput = z.object({
@@ -16,6 +19,7 @@ const createInvoiceInput = z.object({
   exchangeRate: z.coerce.number().positive().optional(),
   notes: z.string().optional(),
   dueAt: z.string().optional(),
+  isExport: z.boolean().default(false),
   items: z.array(lineItemInput).min(1),
 });
 
@@ -27,6 +31,16 @@ async function nextInvoiceNumber(): Promise<string> {
     .where(like(invoices.invoiceNumber, `INV-${year}-%`));
   const next = (row?.max ?? 0) + 1;
   return `INV-${year}-${String(next).padStart(4, '0')}`;
+}
+
+async function getActiveLut() {
+  const today = new Date().toISOString().split('T')[0] ?? '';
+  const [lut] = await db
+    .select()
+    .from(lutRegistrations)
+    .where(and(eq(lutRegistrations.isActive, true), gt(lutRegistrations.expiryDate, today)))
+    .limit(1);
+  return lut ?? null;
 }
 
 export const invoiceRouter = router({
@@ -71,6 +85,20 @@ export const invoiceRouter = router({
       const invoiceNumber = await nextInvoiceNumber();
       const subtotal = input.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
 
+      let lutNumber: string | null = null;
+      if (input.isExport) {
+        const lut = await getActiveLut();
+        if (lut) lutNumber = lut.referenceNumber;
+      }
+
+      const taxAmount = input.items.reduce((s, i) => {
+        const rate = i.gstRate ?? (i.hsnCode ? getHsnRate(i.hsnCode) : 0);
+        const lineTotal = i.quantity * i.unitPrice;
+        return s + Math.round(lineTotal * rate) / 100;
+      }, 0);
+
+      const total = Math.round((subtotal + taxAmount) * 100) / 100;
+
       const [inv] = await db
         .insert(invoices)
         .values({
@@ -78,9 +106,11 @@ export const invoiceRouter = router({
           currency: input.currency,
           exchangeRate: input.exchangeRate ? String(input.exchangeRate) : null,
           subtotal: String(subtotal),
-          taxAmount: '0',
-          total: String(subtotal),
+          taxAmount: String(taxAmount),
+          total: String(total),
           invoiceNumber,
+          isExport: input.isExport,
+          lutNumber,
           dueAt: input.dueAt ? new Date(input.dueAt) : null,
           notes: input.notes,
         })
@@ -88,13 +118,18 @@ export const invoiceRouter = router({
 
       if (!inv) throw new Error('Failed to create invoice');
 
-      const values = input.items.map((i) => ({
-        invoiceId: inv.id,
-        description: i.description,
-        quantity: String(i.quantity),
-        unitPrice: String(i.unitPrice),
-        amount: String(i.quantity * i.unitPrice),
-      }));
+      const values = input.items.map((i) => {
+        const rate = i.gstRate ?? (i.hsnCode ? getHsnRate(i.hsnCode) : 0);
+        return {
+          invoiceId: inv.id,
+          description: i.description,
+          quantity: String(i.quantity),
+          unitPrice: String(i.unitPrice),
+          amount: String(i.quantity * i.unitPrice),
+          hsnCode: i.hsnCode ?? null,
+          gstRate: String(rate),
+        };
+      });
 
       await db.insert(invoiceItems).values(values);
 

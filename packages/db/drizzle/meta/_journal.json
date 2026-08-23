@@ -22,6 +22,13 @@
       "when": 1787493087023,
       "tag": "0002_boring_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787494411814,
+      "tag": "0003_flashy_patch",
+      "breakpoints": true
     }
   ]
 }

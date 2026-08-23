@@ -10,6 +10,8 @@ import { currencyRouter } from '../modules/currencies/router';
 import { invoiceRouter } from '../modules/invoices/router';
 import { pdfRouter } from '../modules/invoices/pdf';
 import { rateRouter } from '../modules/rates/router';
+import { lutRouter } from '../modules/luts/router';
+import { taxRouter } from '../modules/tax/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -55,6 +57,8 @@ export const appRouter = router({
   invoices: invoiceRouter,
   pdf: pdfRouter,
   rates: rateRouter,
+  luts: lutRouter,
+  tax: taxRouter,
 });
 
 export type AppRouter = typeof appRouter;
