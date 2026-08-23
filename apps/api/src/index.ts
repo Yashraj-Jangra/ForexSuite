@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { loadEnv } from '@vaultbill/config';
 import { registerAuthPlugin } from './auth/plugin';
+import { registerTrpcPlugin } from './trpc/plugin';
 
 const env = loadEnv();
 
@@ -14,6 +15,7 @@ async function main() {
   await app.register(helmet, { contentSecurityPolicy: false });
 
   await app.register(registerAuthPlugin);
+  await app.register(registerTrpcPlugin);
 
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 

@@ -15,15 +15,17 @@
     "@fastify/cors": "^10.0.0",
     "@fastify/helmet": "^12.0.0",
     "@fastify/rate-limit": "^10.0.0",
+    "@trpc/server": "^11.18.0",
     "@vaultbill/config": "workspace:*",
     "@vaultbill/db": "workspace:*",
     "@vaultbill/shared": "workspace:*",
     "better-auth": "^1.1.0",
     "bullmq": "^5.0.0",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.0.0",
     "ioredis": "^5.0.0",
-    "zod": "^3.23.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
