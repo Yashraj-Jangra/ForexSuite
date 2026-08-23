@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
+import { toNodeHandler } from 'better-auth/node';
 import { auth } from './config';
 
 export async function registerAuthPlugin(fastify: FastifyInstance) {

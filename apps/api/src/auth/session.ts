@@ -1,6 +1,6 @@
 import { db } from '@vaultbill/db';
 import { session as sessionTable } from '@vaultbill/db/schemas/auth';
-import { eq, gt } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function getSessionFromCookie(cookieHeader: string | undefined) {
   if (!cookieHeader) return null;
