@@ -7,6 +7,9 @@ import { router, publicProcedure, protectedProcedure } from './context';
 import { customerRouter } from '../modules/customers/router';
 import { vendorRouter } from '../modules/vendors/router';
 import { currencyRouter } from '../modules/currencies/router';
+import { invoiceRouter } from '../modules/invoices/router';
+import { pdfRouter } from '../modules/invoices/pdf';
+import { rateRouter } from '../modules/rates/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -49,6 +52,9 @@ export const appRouter = router({
   customers: customerRouter,
   vendors: vendorRouter,
   currencies: currencyRouter,
+  invoices: invoiceRouter,
+  pdf: pdfRouter,
+  rates: rateRouter,
 });
 
 export type AppRouter = typeof appRouter;
