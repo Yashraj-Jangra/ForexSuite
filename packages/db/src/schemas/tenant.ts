@@ -77,3 +77,24 @@ export const invoiceItems = pgTable('invoice_items', {
   hsnCode: text('hsn_code'),
   gstRate: numeric('gst_rate'),
 });
+
+export const vendors = pgTable('vendors', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  address: text('address'),
+  city: text('city'),
+  state: text('state'),
+  country: text('country').notNull(),
+  pincode: text('pincode'),
+  gstin: text('gstin'),
+  pan: text('pan'),
+  bankName: text('bank_name'),
+  bankAccountNumber: text('bank_account_number'),
+  bankIfsc: text('bank_ifsc'),
+  bankSwift: text('bank_swift'),
+  bankAddress: text('bank_address'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

@@ -1,0 +1,20 @@
+CREATE TABLE "vendors" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"email" text,
+	"phone" text,
+	"address" text,
+	"city" text,
+	"state" text,
+	"country" text NOT NULL,
+	"pincode" text,
+	"gstin" text,
+	"pan" text,
+	"bank_name" text,
+	"bank_account_number" text,
+	"bank_ifsc" text,
+	"bank_swift" text,
+	"bank_address" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);

@@ -15,6 +15,13 @@
       "when": 1787491368201,
       "tag": "0001_great_mantis",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787493087023,
+      "tag": "0002_boring_the_captain",
+      "breakpoints": true
     }
   ]
 }

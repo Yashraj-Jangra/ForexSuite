@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/invoices', label: 'Invoices', icon: FileText },
   { href: '/customers', label: 'Customers', icon: Users },
+  { href: '/vendors', label: 'Vendors', icon: Users },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

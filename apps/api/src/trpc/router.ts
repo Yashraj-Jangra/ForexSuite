@@ -4,6 +4,9 @@ import { db } from '@vaultbill/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from './context';
+import { customerRouter } from '../modules/customers/router';
+import { vendorRouter } from '../modules/vendors/router';
+import { currencyRouter } from '../modules/currencies/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -42,6 +45,10 @@ export const appRouter = router({
 
       return tenant;
     }),
+
+  customers: customerRouter,
+  vendors: vendorRouter,
+  currencies: currencyRouter,
 });
 
 export type AppRouter = typeof appRouter;
