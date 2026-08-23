@@ -2,10 +2,11 @@ import { cn } from '@/lib/utils';
 
 interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
   as?: 'main' | 'section' | 'article' | 'header' | 'footer' | 'nav' | 'div';
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
 }
 
 const widths = {
+  xs: 'max-w-md',
   sm: 'max-w-3xl',
   md: 'max-w-5xl',
   lg: 'max-w-6xl',
