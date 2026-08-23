@@ -74,7 +74,13 @@ export default function DashboardPage() {
       ]);
 
       if (femaRes?.result?.data) {
-        setAlerts(Array.isArray(femaRes.result.data) ? femaRes.result.data : (femaRes.result.data.data || []));
+        const d = femaRes.result.data;
+        setAlerts({
+          critical: Array.isArray(d?.critical) ? d.critical : [],
+          warning: Array.isArray(d?.warning) ? d.warning : [],
+          ok: Array.isArray(d?.ok) ? d.ok : [],
+          total: typeof d?.total === 'number' ? d.total : (Array.isArray(d) ? d.length : 0),
+        });
       }
       const invList = Array.isArray(invRes?.result?.data) ? invRes.result.data : (invRes?.result?.data?.data || []);
       setInvoices(invList);
@@ -174,7 +180,7 @@ export default function DashboardPage() {
               <FileText className="size-4" />
             </div>
           </div>
-          <p className="text-2xl font-extrabold font-mono tracking-tight">{invoices.length > 0 ? invoices.length : alerts.total}</p>
+          <p className="text-2xl font-extrabold font-mono tracking-tight">{invoices.length > 0 ? invoices.length : (alerts?.total ?? 0)}</p>
           <p className="text-[11px] text-muted-foreground">Total logged in workspace</p>
         </Card>
 
@@ -191,7 +197,7 @@ export default function DashboardPage() {
 
         <Card
           padding="md"
-          className={`space-y-2 transition-colors ${alerts.critical.length > 0 ? 'border-rose-500/40 bg-rose-500/5' : 'hover:border-accent/40'
+          className={`space-y-2 transition-colors ${(alerts?.critical?.length ?? 0) > 0 ? 'border-rose-500/40 bg-rose-500/5' : 'hover:border-accent/40'
             }`}
         >
           <div className="flex items-center justify-between">
@@ -200,11 +206,11 @@ export default function DashboardPage() {
               <AlertTriangle className="size-4" />
             </div>
           </div>
-          <p className={`text-2xl font-extrabold font-mono tracking-tight ${alerts.critical.length > 0 ? 'text-rose-500' : ''}`}>
-            {alerts.critical.length + alerts.warning.length}
+          <p className={`text-2xl font-extrabold font-mono tracking-tight ${(alerts?.critical?.length ?? 0) > 0 ? 'text-rose-500' : ''}`}>
+            {(alerts?.critical?.length ?? 0) + (alerts?.warning?.length ?? 0)}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            {alerts.critical.length > 0 ? `${alerts.critical.length} realization deadlines` : 'All invoices within limits'}
+            {(alerts?.critical?.length ?? 0) > 0 ? `${alerts.critical.length} realization deadlines` : 'All invoices within limits'}
           </p>
         </Card>
 
@@ -371,14 +377,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Realization Alerts Banner if any */}
-      {(alerts.critical.length > 0 || alerts.warning.length > 0) && (
+      {((alerts?.critical?.length ?? 0) > 0 || (alerts?.warning?.length ?? 0) > 0) && (
         <Card padding="md" className="border-amber-500/30 bg-amber-500/5 space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="size-4 text-amber-500 shrink-0" />
             <h2 className="text-xs font-bold text-foreground">FEMA 270-Day Export Realization Watchlist</h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 text-xs">
-            {[...alerts.critical, ...alerts.warning].map((a) => (
+            {[...(alerts?.critical || []), ...(alerts?.warning || [])].map((a) => (
               <div
                 key={a.invoices.id}
                 className="p-2.5 rounded-lg border border-border bg-card flex items-center justify-between"
