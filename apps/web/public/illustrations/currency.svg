@@ -1,7 +1,18 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
-  <rect width="400" height="300" rx="16" fill="#f59e0b" fill-opacity="0.08"/>
-  <circle cx="200" cy="150" r="60" stroke="#f59e0b" stroke-width="2" fill="#f59e0b" fill-opacity="0.1"/>
-  <circle cx="200" cy="150" r="30" fill="#f59e0b" fill-opacity="0.15"/>
-  <rect x="80" y="180" width="240" height="8" rx="4" fill="#f59e0b" fill-opacity="0.15"/>
-  <rect x="120" y="200" width="160" height="6" rx="3" fill="#f59e0b" fill-opacity="0.1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f59e0b" stop-opacity="0.04"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0.1"/></linearGradient></defs>
+  <rect width="400" height="300" rx="20" fill="url(#bg)"/>
+  <!-- coin 1 -->
+  <circle cx="140" cy="140" r="45" fill="#f59e0b" fill-opacity="0.08" stroke="#f59e0b" stroke-opacity="0.2" stroke-width="2"/>
+  <circle cx="140" cy="140" r="35" fill="none" stroke="#f59e0b" stroke-opacity="0.12" stroke-width="1"/>
+  <text x="124" y="150" font-size="18" font-family="sans-serif" fill="#f59e0b" font-weight="bold" opacity="0.5">$</text>
+  <!-- coin 2 -->
+  <circle cx="220" cy="110" r="40" fill="#3b82f6" fill-opacity="0.08" stroke="#3b82f6" stroke-opacity="0.2" stroke-width="2"/>
+  <circle cx="220" cy="110" r="30" fill="none" stroke="#3b82f6" stroke-opacity="0.12" stroke-width="1"/>
+  <text x="205" y="120" font-size="16" font-family="sans-serif" fill="#3b82f6" font-weight="bold" opacity="0.5">€</text>
+  <!-- coin 3 -->
+  <circle cx="190" cy="195" r="35" fill="#22c55e" fill-opacity="0.08" stroke="#22c55e" stroke-opacity="0.2" stroke-width="2"/>
+  <text x="175" y="204" font-size="15" font-family="sans-serif" fill="#22c55e" font-weight="bold" opacity="0.5">¥</text>
+  <!-- arrows -->
+  <path d="M180 125 L230 125" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.15" stroke-dasharray="4 3"/>
+  <path d="M165 170 L195 130" stroke="#f59e0b" stroke-width="1.5" stroke-opacity="0.1" stroke-dasharray="4 3"/>
 </svg>

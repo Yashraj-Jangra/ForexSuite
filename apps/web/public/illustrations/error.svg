@@ -1,7 +1,15 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
-  <rect width="400" height="300" rx="16" fill="#ef4444" fill-opacity="0.08"/>
-  <circle cx="200" cy="150" r="60" stroke="#ef4444" stroke-width="2" fill="#ef4444" fill-opacity="0.1"/>
-  <circle cx="200" cy="150" r="30" fill="#ef4444" fill-opacity="0.15"/>
-  <rect x="80" y="180" width="240" height="8" rx="4" fill="#ef4444" fill-opacity="0.15"/>
-  <rect x="120" y="200" width="160" height="6" rx="3" fill="#ef4444" fill-opacity="0.1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ef4444" stop-opacity="0.04"/><stop offset="100%" stop-color="#ef4444" stop-opacity="0.08"/></linearGradient></defs>
+  <rect width="400" height="300" rx="20" fill="url(#bg)"/>
+  <!-- warning triangle -->
+  <path d="M200 75 L255 170 L145 170 Z" fill="none" stroke="#ef4444" stroke-opacity="0.3" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="200" y1="125" x2="200" y2="150" stroke="#ef4444" stroke-width="3" stroke-opacity="0.4" stroke-linecap="round"/>
+  <circle cx="200" cy="162" r="2.5" fill="#ef4444" opacity="0.4"/>
+  <!-- broken page -->
+  <rect x="120" y="200" width="160" height="60" rx="6" fill="#ef4444" fill-opacity="0.06" stroke="#ef4444" stroke-opacity="0.1" stroke-width="1"/>
+  <rect x="140" y="215" width="50" height="4" rx="2" fill="#ef4444" fill-opacity="0.1"/>
+  <rect x="140" y="225" width="35" height="4" rx="2" fill="#ef4444" fill-opacity="0.08"/>
+  <rect x="140" y="235" width="60" height="4" rx="2" fill="#ef4444" fill-opacity="0.06"/>
+  <!-- crack line -->
+  <path d="M200 200 L195 215 L210 225 L205 240 L215 260 L210 270" stroke="#ef4444" stroke-width="1.5" stroke-opacity="0.2" stroke-linecap="round"/>
 </svg>

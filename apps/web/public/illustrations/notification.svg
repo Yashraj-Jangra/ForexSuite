@@ -1,7 +1,18 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
-  <rect width="400" height="300" rx="16" fill="#ec4899" fill-opacity="0.08"/>
-  <circle cx="200" cy="150" r="60" stroke="#ec4899" stroke-width="2" fill="#ec4899" fill-opacity="0.1"/>
-  <circle cx="200" cy="150" r="30" fill="#ec4899" fill-opacity="0.15"/>
-  <rect x="80" y="180" width="240" height="8" rx="4" fill="#ec4899" fill-opacity="0.15"/>
-  <rect x="120" y="200" width="160" height="6" rx="3" fill="#ec4899" fill-opacity="0.1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ec4899" stop-opacity="0.04"/><stop offset="100%" stop-color="#ec4899" stop-opacity="0.1"/></linearGradient></defs>
+  <rect width="400" height="300" rx="20" fill="url(#bg)"/>
+  <!-- bell -->
+  <path d="M200 75 Q200 55 185 55 Q170 55 170 75 L170 95 L230 95 L230 75 Q230 55 215 55 Q200 55 200 75 Z" fill="#ec4899" fill-opacity="0.1" stroke="#ec4899" stroke-opacity="0.25" stroke-width="1.5"/>
+  <circle cx="200" cy="65" r="5" fill="#ec4899" fill-opacity="0.15"/>
+  <!-- bell bottom -->
+  <rect x="190" y="95" width="20" height="4" rx="2" fill="#ec4899" fill-opacity="0.12"/>
+  <!-- notification cards -->
+  <rect x="100" y="120" width="200" height="40" rx="6" fill="#ec4899" fill-opacity="0.06" stroke="#ec4899" stroke-opacity="0.1" stroke-width="1"/>
+  <rect x="115" y="132" width="60" height="4" rx="2" fill="#ec4899" fill-opacity="0.15"/>
+  <rect x="115" y="142" width="40" height="3" rx="1.5" fill="#ec4899" fill-opacity="0.08"/>
+  <rect x="100" y="172" width="200" height="40" rx="6" fill="#ec4899" fill-opacity="0.04" stroke="#ec4899" stroke-opacity="0.07" stroke-width="1"/>
+  <rect x="115" y="184" width="80" height="4" rx="2" fill="#ec4899" fill-opacity="0.1"/>
+  <rect x="115" y="194" width="50" height="3" rx="1.5" fill="#ec4899" fill-opacity="0.06"/>
+  <rect x="100" y="224" width="200" height="35" rx="6" fill="#ec4899" fill-opacity="0.03" stroke="#ec4899" stroke-opacity="0.05" stroke-width="1"/>
+  <rect x="115" y="234" width="90" height="3" rx="1.5" fill="#ec4899" fill-opacity="0.08"/>
 </svg>
