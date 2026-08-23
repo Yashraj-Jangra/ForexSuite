@@ -39,8 +39,8 @@ export function calculateGst(
 
   if (fromStateCode === toStateCode) {
     return {
-      cgst: Math.round(taxAmount / 2 * 100) / 100,
-      sgst: Math.round(taxAmount / 2 * 100) / 100,
+      cgst: Math.round((taxAmount / 2) * 100) / 100,
+      sgst: Math.round((taxAmount / 2) * 100) / 100,
       igst: 0,
       totalGst: taxAmount,
       rate,

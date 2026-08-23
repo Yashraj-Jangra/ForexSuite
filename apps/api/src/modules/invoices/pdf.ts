@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { invoices, invoiceItems, customers } from '@vaultbill/db/schemas/tenant';
-import { db } from '@vaultbill/db';
 import { eq } from 'drizzle-orm';
 import { generatePdf, renderInvoiceHtml } from '@vaultbill/pdf';
 
 export const pdfRouter = router({
-  download: protectedProcedure.input(z.string().uuid()).query(async ({ input }) => {
-    const [inv] = await db
+  download: protectedProcedure.input(z.string().uuid()).query(async ({ ctx, input }) => {
+    const [inv] = await ctx.db
       .select()
       .from(invoices)
       .leftJoin(customers, eq(invoices.customerId, customers.id))
@@ -16,7 +15,7 @@ export const pdfRouter = router({
 
     if (!inv) throw new Error('Invoice not found');
 
-    const items = await db
+    const items = await ctx.db
       .select()
       .from(invoiceItems)
       .where(eq(invoiceItems.invoiceId, input));

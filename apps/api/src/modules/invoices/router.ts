@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { invoices, invoiceItems, customers, lutRegistrations } from '@vaultbill/db/schemas/tenant';
-import { db } from '@vaultbill/db';
 import { eq, desc, like, sql, and, gt } from 'drizzle-orm';
 import { getHsnRate } from '@vaultbill/shared';
 
@@ -23,9 +22,9 @@ const createInvoiceInput = z.object({
   items: z.array(lineItemInput).min(1),
 });
 
-async function nextInvoiceNumber(): Promise<string> {
+async function nextInvoiceNumber(ctxDb: any): Promise<string> {
   const year = new Date().getFullYear().toString().slice(-2);
-  const [row] = await db
+  const [row] = await ctxDb
     .select({ max: sql<number>`COALESCE(MAX(NULLIF(REGEXP_REPLACE(invoice_number, '\\D', '', 'g'), '')::int), 0)` })
     .from(invoices)
     .where(like(invoices.invoiceNumber, `INV-${year}-%`));
@@ -33,9 +32,9 @@ async function nextInvoiceNumber(): Promise<string> {
   return `INV-${year}-${String(next).padStart(4, '0')}`;
 }
 
-async function getActiveLut() {
+async function getActiveLut(ctxDb: any) {
   const today = new Date().toISOString().split('T')[0] ?? '';
-  const [lut] = await db
+  const [lut] = await ctxDb
     .select()
     .from(lutRegistrations)
     .where(and(eq(lutRegistrations.isActive, true), gt(lutRegistrations.expiryDate, today)))
@@ -52,8 +51,8 @@ export const invoiceRouter = router({
         offset: z.number().int().default(0),
       }).optional(),
     )
-    .query(({ input }) =>
-      db
+    .query(({ ctx, input }) =>
+      ctx.db
         .select()
         .from(invoices)
         .leftJoin(customers, eq(invoices.customerId, customers.id))
@@ -62,8 +61,8 @@ export const invoiceRouter = router({
         .offset(input?.offset ?? 0),
     ),
 
-  get: protectedProcedure.input(z.string().uuid()).query(async ({ input }) => {
-    const [inv] = await db
+  get: protectedProcedure.input(z.string().uuid()).query(async ({ ctx, input }) => {
+    const [inv] = await ctx.db
       .select()
       .from(invoices)
       .leftJoin(customers, eq(invoices.customerId, customers.id))
@@ -71,7 +70,7 @@ export const invoiceRouter = router({
       .limit(1);
     if (!inv) return null;
 
-    const items = await db
+    const items = await ctx.db
       .select()
       .from(invoiceItems)
       .where(eq(invoiceItems.invoiceId, input));
@@ -81,13 +80,12 @@ export const invoiceRouter = router({
 
   create: protectedProcedure
     .input(createInvoiceInput)
-    .mutation(async ({ input }) => {
-      const invoiceNumber = await nextInvoiceNumber();
+    .mutation(async ({ ctx, input }) => {
       const subtotal = input.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
 
       let lutNumber: string | null = null;
       if (input.isExport) {
-        const lut = await getActiveLut();
+        const lut = await getActiveLut(ctx.db);
         if (lut) lutNumber = lut.referenceNumber;
       }
 
@@ -99,51 +97,73 @@ export const invoiceRouter = router({
 
       const total = Math.round((subtotal + taxAmount) * 100) / 100;
 
-      const [inv] = await db
-        .insert(invoices)
-        .values({
-          customerId: input.customerId,
-          currency: input.currency,
-          exchangeRate: input.exchangeRate ? String(input.exchangeRate) : null,
-          subtotal: String(subtotal),
-          taxAmount: String(taxAmount),
-          total: String(total),
-          invoiceNumber,
-          isExport: input.isExport,
-          lutNumber,
-          dueAt: input.dueAt ? new Date(input.dueAt) : null,
-          notes: input.notes,
-        })
-        .returning();
+      let lastError: unknown;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          const invoiceNumber = await nextInvoiceNumber(ctx.db);
 
-      if (!inv) throw new Error('Failed to create invoice');
+          const result = await ctx.db.transaction(async (tx) => {
+            const [inv] = await tx
+              .insert(invoices)
+              .values({
+                customerId: input.customerId,
+                currency: input.currency,
+                exchangeRate: input.exchangeRate ? String(input.exchangeRate) : null,
+                subtotal: String(subtotal),
+                taxAmount: String(taxAmount),
+                total: String(total),
+                invoiceNumber,
+                isExport: input.isExport,
+                lutNumber,
+                dueAt: input.dueAt ? new Date(input.dueAt) : null,
+                notes: input.notes,
+              })
+              .returning();
 
-      const values = input.items.map((i) => {
-        const rate = i.gstRate ?? (i.hsnCode ? getHsnRate(i.hsnCode) : 0);
-        return {
-          invoiceId: inv.id,
-          description: i.description,
-          quantity: String(i.quantity),
-          unitPrice: String(i.unitPrice),
-          amount: String(i.quantity * i.unitPrice),
-          hsnCode: i.hsnCode ?? null,
-          gstRate: String(rate),
-        };
-      });
+            if (!inv) throw new Error('Failed to create invoice');
 
-      await db.insert(invoiceItems).values(values);
+            const values = input.items.map((i) => {
+              const rate = i.gstRate ?? (i.hsnCode ? getHsnRate(i.hsnCode) : 0);
+              return {
+                invoiceId: inv.id,
+                description: i.description,
+                quantity: String(i.quantity),
+                unitPrice: String(i.unitPrice),
+                amount: String(i.quantity * i.unitPrice),
+                hsnCode: i.hsnCode ?? null,
+                gstRate: String(rate),
+              };
+            });
 
-      return { ...inv, items: values };
+            await tx.insert(invoiceItems).values(values);
+
+            return { ...inv, items: values };
+          });
+
+          return result;
+        } catch (err: any) {
+          lastError = err;
+          if (err?.code === '23505') {
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      throw lastError;
     }),
 
   updateStatus: protectedProcedure
     .input(z.object({ id: z.string().uuid(), status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']) }))
-    .mutation(({ input }) =>
-      db.update(invoices).set({ status: input.status }).where(eq(invoices.id, input.id)).returning().then((r) => r[0]),
+    .mutation(({ ctx, input }) =>
+      ctx.db.update(invoices).set({ status: input.status }).where(eq(invoices.id, input.id)).returning().then((r) => r[0]),
     ),
 
-  delete: protectedProcedure.input(z.string().uuid()).mutation(({ input }) => {
-    db.delete(invoiceItems).where(eq(invoiceItems.invoiceId, input));
-    return db.delete(invoices).where(eq(invoices.id, input)).then((r) => ({ deleted: r.rowCount ?? 0 }));
+  delete: protectedProcedure.input(z.string().uuid()).mutation(async ({ ctx, input }) => {
+    const result = await ctx.db.transaction(async (tx) => {
+      await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, input));
+      return tx.delete(invoices).where(eq(invoices.id, input));
+    });
+    return { deleted: result.rowCount ?? 0 };
   }),
 });

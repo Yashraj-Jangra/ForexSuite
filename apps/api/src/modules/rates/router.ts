@@ -1,22 +1,21 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../../trpc/context';
 import { exchangeRates, currencies } from '@vaultbill/db/schemas/tenant';
-import { db } from '@vaultbill/db';
 import { desc, eq } from 'drizzle-orm';
 
 export const rateRouter = router({
-  latest: publicProcedure.query(() =>
-    db.select().from(exchangeRates).orderBy(desc(exchangeRates.fetchedAt)).limit(50),
+  latest: publicProcedure.query(({ ctx }) =>
+    ctx.db.select().from(exchangeRates).orderBy(desc(exchangeRates.fetchedAt)).limit(50),
   ),
 
-  currencies: publicProcedure.query(() =>
-    db.select().from(currencies).orderBy(currencies.code),
+  currencies: publicProcedure.query(({ ctx }) =>
+    ctx.db.select().from(currencies).orderBy(currencies.code),
   ),
 
   convert: publicProcedure
     .input(z.object({ from: z.string().length(3), to: z.string().length(3), amount: z.coerce.number() }))
-    .query(async ({ input }) => {
-      const [rate] = await db
+    .query(async ({ ctx, input }) => {
+      const [rate] = await ctx.db
         .select()
         .from(exchangeRates)
         .where(eq(exchangeRates.baseCurrency, input.from))

@@ -7,6 +7,7 @@ import {
   boolean,
   integer,
   date,
+  index,
 } from 'drizzle-orm/pg-core';
 
 export const customers = pgTable('customers', {
@@ -40,7 +41,10 @@ export const exchangeRates = pgTable('exchange_rates', {
   rate: numeric('rate').notNull(),
   source: text('source').notNull(),
   fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  baseCurrencyIdx: index('exchange_rates_base_currency_idx').on(table.baseCurrency),
+  targetCurrencyIdx: index('exchange_rates_target_currency_idx').on(table.targetCurrency),
+}));
 
 export const invoices = pgTable('invoices', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -63,7 +67,9 @@ export const invoices = pgTable('invoices', {
   dueAt: timestamp('due_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  customerIdIdx: index('invoices_customer_id_idx').on(table.customerId),
+}));
 
 export const invoiceItems = pgTable('invoice_items', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -76,7 +82,9 @@ export const invoiceItems = pgTable('invoice_items', {
   amount: numeric('amount').notNull(),
   hsnCode: text('hsn_code'),
   gstRate: numeric('gst_rate'),
-});
+}, (table) => ({
+  invoiceIdIdx: index('invoice_items_invoice_id_idx').on(table.invoiceId),
+}));
 
 export const vendors = pgTable('vendors', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -149,7 +157,9 @@ export const remittances = pgTable('remittances', {
   status: text('status').notNull().default('pending'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  remitterPanIdx: index('remittances_remitter_pan_idx').on(table.remitterPan),
+}));
 
 export const rbiPurposeCodes = pgTable('rbi_purpose_codes', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -170,4 +180,6 @@ export const forexTransactions = pgTable('forex_transactions', {
   customerPassportKyc: text('customer_passport_kyc'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  transactionDateIdx: index('forex_transactions_date_idx').on(table.transactionDate),
+}));

@@ -1,16 +1,15 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { fircs, invoices } from '@vaultbill/db/schemas/tenant';
-import { db } from '@vaultbill/db';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export const fircRouter = router({
-  list: protectedProcedure.query(() =>
-    db.select().from(fircs).orderBy(fircs.dateOfIssuance),
+  list: protectedProcedure.query(({ ctx }) =>
+    ctx.db.select().from(fircs).orderBy(fircs.dateOfIssuance).limit(200),
   ),
 
-  get: protectedProcedure.input(z.string().uuid()).query(({ input }) =>
-    db.select().from(fircs).where(eq(fircs.id, input)).limit(1).then((r) => r[0] ?? null),
+  get: protectedProcedure.input(z.string().uuid()).query(({ ctx, input }) =>
+    ctx.db.select().from(fircs).where(eq(fircs.id, input)).limit(1).then((r) => r[0] ?? null),
   ),
 
   create: protectedProcedure
@@ -25,9 +24,9 @@ export const fircRouter = router({
       purposeCode: z.string().optional(),
       pdfPath: z.string().optional(),
     }))
-    .mutation(({ input }) => {
+    .mutation(({ ctx, input }) => {
       const unmapped = input.amountInr ?? input.amount;
-      return db.insert(fircs).values({
+      return ctx.db.insert(fircs).values({
         fircNumber: input.fircNumber,
         issuingBank: input.issuingBank,
         dateOfIssuance: input.dateOfIssuance,
@@ -43,21 +42,23 @@ export const fircRouter = router({
 
   linkInvoice: protectedProcedure
     .input(z.object({ fircId: z.string().uuid(), invoiceId: z.string().uuid(), amount: z.coerce.number() }))
-    .mutation(async ({ input }) => {
-      const [firc] = await db.select().from(fircs).where(eq(fircs.id, input.fircId)).limit(1);
+    .mutation(async ({ ctx, input }) => {
+      const [firc] = await ctx.db.select().from(fircs).where(eq(fircs.id, input.fircId)).limit(1);
       if (!firc) throw new Error('FIRC not found');
 
       const currentUnmapped = Number(firc.unmappedAmountInr ?? firc.amountInr ?? firc.amount);
       const newUnmapped = Math.round((currentUnmapped - input.amount) * 100) / 100;
       if (newUnmapped < 0) throw new Error('Amount exceeds unmapped balance');
 
-      await db.update(fircs).set({ unmappedAmountInr: String(Math.max(newUnmapped, 0)) }).where(eq(fircs.id, input.fircId));
-      await db.update(invoices).set({ fircId: input.fircId }).where(eq(invoices.id, input.invoiceId));
+      await ctx.db.transaction(async (tx) => {
+        await tx.update(fircs).set({ unmappedAmountInr: String(Math.max(newUnmapped, 0)) }).where(eq(fircs.id, input.fircId));
+        await tx.update(invoices).set({ fircId: input.fircId }).where(eq(invoices.id, input.invoiceId));
+      });
 
-      return { linked: true, remaining: Math.max(newUnmapped, 0) };
+      return { linked: true };
     }),
 
-  delete: protectedProcedure.input(z.string().uuid()).mutation(({ input }) =>
-    db.delete(fircs).where(eq(fircs.id, input)),
+  delete: protectedProcedure.input(z.string().uuid()).mutation(({ ctx, input }) =>
+    ctx.db.delete(fircs).where(eq(fircs.id, input)),
   ),
 });

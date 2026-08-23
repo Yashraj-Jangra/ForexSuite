@@ -1,18 +1,18 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { forexTransactions } from '@vaultbill/db/schemas/tenant';
-import { db } from '@vaultbill/db';
 import { eq, and, gte, lt, desc } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as XLSX from 'xlsx';
 
 const PURCHASE_CATEGORIES = ['public', 'franchisee', 'ffmc_ad'] as const;
 const SALE_CATEGORIES = ['btq', 'business', 'ffmc_ad'] as const;
 
-async function getStatement(year: number, month: number) {
+async function getStatement(ctxDb: NodePgDatabase<any>, year: number, month: number) {
   const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
   const nextMonth = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
-  const transactions = await db
+  const transactions = await ctxDb
     .select()
     .from(forexTransactions)
     .where(and(gte(forexTransactions.transactionDate, monthStart), lt(forexTransactions.transactionDate, nextMonth)))
@@ -41,8 +41,8 @@ async function getStatement(year: number, month: number) {
 }
 
 export const forexRouter = router({
-  list: protectedProcedure.query(() =>
-    db.select().from(forexTransactions).orderBy(desc(forexTransactions.transactionDate)),
+  list: protectedProcedure.query(({ ctx }) =>
+    ctx.db.select().from(forexTransactions).orderBy(desc(forexTransactions.transactionDate)),
   ),
 
   create: protectedProcedure
@@ -56,8 +56,8 @@ export const forexRouter = router({
       customerName: z.string().optional(),
       customerPassportKyc: z.string().optional(),
     }))
-    .mutation(({ input }) =>
-      db.insert(forexTransactions).values({
+    .mutation(({ ctx, input }) =>
+      ctx.db.insert(forexTransactions).values({
         transactionDate: input.transactionDate,
         currency: input.currency,
         transactionType: input.transactionType,
@@ -69,18 +69,18 @@ export const forexRouter = router({
       }).returning().then((r) => r[0]),
     ),
 
-  delete: protectedProcedure.input(z.string().uuid()).mutation(({ input }) =>
-    db.delete(forexTransactions).where(eq(forexTransactions.id, input)),
+  delete: protectedProcedure.input(z.string().uuid()).mutation(({ ctx, input }) =>
+    ctx.db.delete(forexTransactions).where(eq(forexTransactions.id, input)),
   ),
 
   statement: protectedProcedure
     .input(z.object({ year: z.number().int(), month: z.number().int().min(1).max(12) }))
-    .query(async ({ input }) => getStatement(input.year, input.month)),
+    .query(async ({ ctx, input }) => getStatement(ctx.db, input.year, input.month)),
 
   exportExcel: protectedProcedure
     .input(z.object({ year: z.number().int(), month: z.number().int().min(1).max(12) }))
-    .query(async ({ input }) => {
-      const data = await getStatement(input.year, input.month);
+    .query(async ({ ctx, input }) => {
+      const data = await getStatement(ctx.db, input.year, input.month);
 
       const wb = XLSX.utils.book_new();
       const summaryRows = [

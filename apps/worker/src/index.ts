@@ -7,7 +7,7 @@ import type { NotificationPayload } from './jobs/processors';
 const env = loadEnv();
 const connection = { url: env.REDIS_URL };
 
-new Worker<NotificationPayload>(
+const worker = new Worker<NotificationPayload>(
   'notifications',
   async (job) => {
     console.log(`Processing ${job.data.type} via ${job.data.channel}`);
@@ -16,5 +16,13 @@ new Worker<NotificationPayload>(
   },
   { connection },
 );
+
+const closeGracefully = async (signal: string) => {
+  console.log(`Received ${signal}, shutting down worker gracefully`);
+  await worker.close();
+  process.exit(0);
+};
+process.on('SIGTERM', () => closeGracefully('SIGTERM'));
+process.on('SIGINT', () => closeGracefully('SIGINT'));
 
 console.log('Worker started — listening for notifications');

@@ -5,11 +5,15 @@ export async function generatePdf(html: string): Promise<Buffer> {
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
-  const pdf = await page.pdf({ format: 'A4', printBackground: true });
-  await browser.close();
-  return Buffer.from(pdf);
+  try {
+    const page = await browser.newPage();
+    await page.setDefaultTimeout(30000);
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true });
+    return Buffer.from(pdf);
+  } finally {
+    await browser.close();
+  }
 }
 
 export { renderInvoiceHtml } from './templates/invoice';

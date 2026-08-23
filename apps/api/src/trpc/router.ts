@@ -1,4 +1,5 @@
-import { tenantMembers, tenants, users } from '@vaultbill/db/schemas/public';
+import { tenantMembers, tenants } from '@vaultbill/db/schemas/public';
+import { user } from '@vaultbill/db/schemas/auth';
 import { provisionTenantSchema } from '@vaultbill/db/provision';
 import { db } from '@vaultbill/db';
 import { eq } from 'drizzle-orm';
@@ -25,8 +26,8 @@ export const appRouter = router({
   })),
 
   me: protectedProcedure.query(async ({ ctx }) => {
-    const [user] = await db.select().from(users).where(eq(users.id, ctx.userId)).limit(1);
-    return user ?? null;
+    const [found] = await db.select().from(user).where(eq(user.id, ctx.userId)).limit(1);
+    return found ?? null;
   }),
 
   tenants: protectedProcedure.query(async ({ ctx }) => {
@@ -40,20 +41,26 @@ export const appRouter = router({
   createTenant: protectedProcedure
     .input(z.object({ name: z.string().min(1).max(100), slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/) }))
     .mutation(async ({ ctx, input }) => {
-      const [tenant] = await db
-        .insert(tenants)
-        .values({ name: input.name, slug: input.slug })
-        .returning();
+      if (!ctx.userId) throw new Error('Unauthorized');
 
-      if (!tenant) throw new Error('Failed to create tenant');
+      const result = await db.transaction(async (tx) => {
+        const [tenant] = await tx
+          .insert(tenants)
+          .values({ name: input.name, slug: input.slug })
+          .returning();
 
-      await provisionTenantSchema(tenant.id);
+        if (!tenant) throw new Error('Failed to create tenant');
 
-      await db
-        .insert(tenantMembers)
-        .values({ tenantId: tenant.id, userId: ctx.userId, role: 'admin' });
+        await tx
+          .insert(tenantMembers)
+          .values({ tenantId: tenant.id, userId: ctx.userId, role: 'admin' });
 
-      return tenant;
+        return tenant;
+      });
+
+      await provisionTenantSchema(result.id);
+
+      return result;
     }),
 
   customers: customerRouter,

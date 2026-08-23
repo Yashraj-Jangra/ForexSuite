@@ -1,15 +1,12 @@
 import { router, protectedProcedure } from '../../trpc/context';
 import { invoices, customers } from '@vaultbill/db/schemas/tenant';
-import { db } from '@vaultbill/db';
-import { eq, and, lt, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 export const femaRouter = router({
-  alerts: protectedProcedure.query(async () => {
+  alerts: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date();
-    const warningDate = new Date(now.getTime() - 180 * 86400000).toISOString().split('T')[0];
-    const criticalDate = new Date(now.getTime() - 240 * 86400000).toISOString().split('T')[0];
 
-    const flagged = await db
+    const flagged = await ctx.db
       .select()
       .from(invoices)
       .leftJoin(customers, eq(invoices.customerId, customers.id))
@@ -26,9 +23,9 @@ export const femaRouter = router({
       });
 
     return {
-      critical: alerts.filter((a) => a.status === 'critical'),
-      warning: alerts.filter((a) => a.status === 'warning'),
-      ok: alerts.filter((a) => a.status === 'ok'),
+      critical: alerts.filter((a) => a.status === 'critical').slice(0, 100),
+      warning: alerts.filter((a) => a.status === 'warning').slice(0, 100),
+      ok: alerts.filter((a) => a.status === 'ok').slice(0, 100),
       total: alerts.length,
     };
   }),
