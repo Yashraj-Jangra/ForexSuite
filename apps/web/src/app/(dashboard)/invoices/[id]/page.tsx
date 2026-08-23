@@ -14,7 +14,6 @@ import {
   XCircle,
   FileText,
   Calendar,
-  Building,
   ScrollText,
   ShieldCheck,
   CreditCard,

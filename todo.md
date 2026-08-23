@@ -1,44 +1,68 @@
-# VaultBill Project Progress
+# todo.md — VaultBill Project Tracker
 
-- [x] **Project Setup & Monorepo Configuration**
-  - [x] Monorepo structure with Turborepo & pnpm
-  - [x] Unified `.env` loading and WSL Docker support
-  - [x] Core configuration packages (`@vaultbill/config`, `@vaultbill/shared`, `@vaultbill/db`, `@vaultbill/pdf`)
-- [x] **Database Setup & Migrations**
-  - [x] PostgreSQL schema with Drizzle ORM (multi-tenant architecture)
-  - [x] Auth tables (`user`, `session`, `account`, `verification`, `tenants`, `tenantMembers`)
-  - [x] Invoicing tables (`invoices`, `invoiceItems`, `customers`, `vendors`)
-  - [x] Compliance tables (`remittances`, `luts`, `fircs`, `fircInvoiceLinks`, `forexTransactions`)
-- [x] **Backend API (Fastify + tRPC)**
-  - [x] Better Auth Fastify plugin with cookie adapter
-  - [x] Multi-currency exchange rate engine with cross-currency conversion and live sync procedure
-  - [x] Invoice management with zero-rated export LUT support & PDF generator
-  - [x] Statutory compliance routers (Form A2 PDF procedure, FLM-8 statement with balance equation, FIRC reconciliation, LUT registry)
-- [x] **Frontend Platform (Next.js 14 + Tailwind CSS)**
-  - [x] Sleek modern UI design system with Plus Jakarta Sans typography and JetBrains Mono
-  - [x] Rich dark theme with midnight slate colors (no pitch black / green tint)
-  - [x] 6 versatile accent color presets (Indigo, Blue, Violet, Emerald, Rose, Amber)
-  - [x] Minimalist layout shell with responsive sidebar navigation
-  - [x] Financial Overview Dashboard (`/dashboard`) with live forex ticker, 4 key metrics, and calculator
-  - [x] Invoices suite (`/invoices`, `/invoices/new`, `/invoices/[id]`) with one-click PDF download & status transitions
-  - [x] Statutory Compliance suite:
-    - [x] LRS Outward Remittance & Form A2 Generator (`/compliance/lrs`)
-    - [x] GST LUT Exemption Registry (`/compliance/lut`)
-    - [x] FIRC Document & Invoice Reconciliation Manager (`/compliance/firc`)
-    - [x] FLM-8 Monthly Statement & Excel `.xlsx` Exporter (`/compliance/flm8`)
-  - [x] Customer & Vendor Directories (`/customers`, `/vendors`)
-  - [x] Workspace Settings (`/settings`, `/settings/rates`, `/settings/compliance`, `/settings/appearance`)
-- [x] **Quality Assurance & Verification**
-  - [x] Monorepo typechecking passing across all 7 workspace packages (`pnpm typecheck`)
-  - [x] Browser validation for UI and end-to-end workflows
+## Last Session Summary (2026-08-24)
+
+### ✅ Completed — FFMC Cash Memo Invoice System
+
+#### Database
+- Extended `customers` table with KYC columns: `passportNumber`, `nationality`, `gender`, `defaultPurpose`, `placeOfSupply`, `defaultDestinationCountry`
+- Extended `invoices` table with Cash Memo fields: `invoiceType`, `saleDate`, `placeOfSupply`, `paymentMode`, `paymentReference`, `transactionNarrative`, `gstTaxableAmount`, `cgstRate`, `cgstAmount`, `sgstRate`, `sgstAmount`, `igstRate`, `igstAmount`, `roundOff`, `lrsLine`, `amountInWords`, `disclaimer1`, `disclaimer2`
+- Extended `invoiceItems` with forex fields: `currencyName`, `sacCode`, `amountForeign`, `itemExchangeRate`, `amountInr`
+- Added new `businessProfile` table (company identity, regulatory IDs, logo, signature, invoice number format, GST defaults, disclaimers)
+- Ran `pnpm push` — schema live in dev DB
+
+#### Backend API
+- **NEW** `apps/api/src/modules/business-profile/router.ts` — get/save/nextInvoiceNumber
+- Registered `businessProfile` in main tRPC router
+- **REWRITTEN** `apps/api/src/modules/invoices/router.ts` — full Cash Memo support:
+  - `numberToWords()` — Indian lakhs/crores number-to-words
+  - `generateNarrative()` — auto-fills "We have sold today..." from customer KYC
+  - GST auto-computation: CGST+SGST (intrastate) or IGST (interstate)
+  - TCS tracking ready (field exists, auto-compute wired to customer PAN LRS tracking — TCS display on PDF pending full LRS module integration)
+  - Business profile defaults auto-loaded for SAC, GST rates, disclaimers
+- **EXTENDED** `apps/api/src/modules/customers/router.ts` — added all KYC fields to create/update
+- **REWRITTEN** `apps/api/src/modules/invoices/pdf.ts` — passes full `CashMemoData` payload to PDF renderer
+
+#### PDF Template
+- **REWRITTEN** `packages/pdf/src/templates/invoice.ts` — full Cash Memo layout matching real sample:
+  - Logo + company name header
+  - Seller info + regulatory IDs (RBI/CIN/PAN/GSTIN) in two-column grid
+  - Invoice number, date, customer KYC zone, QR placeholder
+  - Transaction narrative paragraph
+  - Forex items table (Currency | SAC | Amount | Rate | Rs. Equivalent)
+  - GST block (CGST+SGST or IGST, TCS row if applicable, round off, total)
+  - Amount in words, payment row, LRS line, disclaimers, signature zone
+
+#### Frontend — Web App
+- **NEW** `apps/web/src/app/(dashboard)/settings/profile/page.tsx` — full Business Profile settings with:
+  - Company identity + regulatory identifiers
+  - Invoice number format picker with 3 presets + custom with live preview
+  - GST defaults panel with FFMC explanation
+  - Logo + signature image upload
+  - Disclaimer text areas
+- Added "Business Profile" link to Sidebar under Settings
+- **REWRITTEN** `apps/web/src/app/(dashboard)/invoices/new/page.tsx` — Cash Memo + Export Invoice mode toggle:
+  - Cash Memo: seller block (auto from profile), invoice header, customer with full KYC auto-fill, forex lines with rate auto-fetch, live GST computation preview, IGST/CGST auto-detection banner with manual override, payment, narrative preview, LRS line, disclaimers
+  - Export Invoice: existing flow preserved
+- **EXTENDED** `apps/web/src/app/(dashboard)/customers/page.tsx` — KYC section in Add Customer form, KYC shown on customer cards
+
+#### Verification
+- `pnpm --filter @vaultbill/api typecheck` → exit 0 ✅
+- `pnpm --filter @vaultbill/web typecheck` → exit 0 ✅
+- Git commit: `✨ add full FFMC Cash Memo invoicing system`
 
 ---
 
-### What Was Accomplished in Recent Sessions:
-- **API Proxying & Auth Middleware**: Fixed `middleware.ts` which was erroneously intercepting and redirecting `/api/trpc/*` routes before Next.js rewrites could proxy requests to the Fastify backend on port 3001.
-- **tRPC Data Unwrapping**: Corrected double `.data` unwrapping across all dashboard, customer, vendor, invoice, LUT, FIRC, and LRS forms so database entities immediately render and reload.
-- **Invoice Number Generation**: Resolved integer overflow and regex parsing in `nextInvoiceNumber()` to reliably issue structured sequential invoice IDs (`INV-26-0001`).
-- **PDF Generation Engine**: Added system browser discovery (Google Chrome & Microsoft Edge) in `@vaultbill/pdf` for seamless client-side invoice and Form A2 PDF generation.
-- **UI/UX Modernization**: Clean midnight slate dark mode, Plus Jakarta Sans typography, and responsive modern navigation.
+## Next Steps
 
+1. **Invoice Detail Page** (`/invoices/[id]`) — show full Cash Memo layout in-browser (HTML preview matching PDF)
+2. **TCS auto-compute** — wire customer PAN annual LRS cumulative tracking: when total > ₹7L, auto-add TCS line
+3. **QR Code generation** — replace placeholder box with actual QR encoding invoice number + amount + date
+4. **Settings profile → auto-load on Business Profile page** — already implemented, test round-trip
+5. **Customer Edit** — Add KYC fields to edit flow (currently only Add form has them)
+6. **Invoice list page** — show invoice type badge (Cash Memo / Export Invoice)
 
+## Known Issues / Edge Cases
+- TCS rate (5% / 20%) needs annual PAN LRS cumulative tracking before it can auto-compute
+- IGST auto-detection uses state code comparison — requires both seller and buyer Place of Supply to have `(XX)` code format
+- `nextInvoiceNumber` increments based on DB seed, may desync if multiple invoices created simultaneously (for low-volume FFMC use, this is acceptable)

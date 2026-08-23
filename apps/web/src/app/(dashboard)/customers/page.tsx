@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
-import { Users, Plus, Search, Mail, Globe, MapPin, Building, Phone } from 'lucide-react';
+import { Users, Plus, Search, Mail, Globe, MapPin, Building2, Phone } from 'lucide-react';
 
 type Customer = {
   id: string;
@@ -147,7 +147,7 @@ export default function CustomersPage() {
         <Card padding="lg" className="border-accent/40 bg-card/90 space-y-4 animate-in fade-in">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h3 className="text-base font-bold flex items-center gap-2">
-              <Building className="size-4 text-accent" />
+              <Building2 className="size-4 text-accent" />
               <span>Register New Customer</span>
             </h3>
             <button onClick={() => setShowForm(false)} className="text-xs text-muted-foreground hover:text-foreground">
@@ -242,7 +242,7 @@ export default function CustomersPage() {
                   {c.country}
                 </span>
               </div>
-              <Building className="size-4 text-muted-foreground/60" />
+              <Building2 className="size-4 text-muted-foreground/60" />
             </div>
 
             <div className="space-y-1.5 text-xs text-muted-foreground pt-2 border-t border-border/50">
