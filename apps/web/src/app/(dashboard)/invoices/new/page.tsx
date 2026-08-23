@@ -58,14 +58,15 @@ export default function NewInvoicePage() {
         fetch('/api/trpc/luts.active', { credentials: 'include' }).then((r) => r.json()),
       ]);
 
-      const custList = custRes?.result?.data?.data || [];
+      const custList = Array.isArray(custRes?.result?.data) ? custRes.result.data : (custRes?.result?.data?.data || []);
       setCustomers(custList);
       if (custList.length > 0) setCustomerId(custList[0].id);
 
-      const lutList = lutRes?.result?.data || [];
+      const lutList = Array.isArray(lutRes?.result?.data) ? lutRes.result.data : (lutRes?.result?.data?.data || []);
       if (lutList.length > 0) setActiveLut(lutList[0]);
     } catch { /* ignore */ }
   }
+
 
   useEffect(() => {
     loadInitialData();

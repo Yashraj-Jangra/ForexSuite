@@ -18,6 +18,16 @@ export default function RateSettingsPage() {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  useEffect(() => {
+    fetch('/api/trpc/settings.get', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((j) => {
+        const val = j?.result?.data?.rateSyncIntervalMin;
+        if (typeof val === 'number') setIntervalVal(val);
+      })
+      .catch(() => {});
+  }, []);
+
   async function handleSave() {
     setSaving(true);
     setSavedSuccess(false);
@@ -42,8 +52,9 @@ export default function RateSettingsPage() {
         credentials: 'include',
       });
       const json = await res.json();
-      if (json?.result?.data?.syncedAt) {
-        setLastSync(new Date(json.result.data.syncedAt).toLocaleTimeString());
+      const ts = json?.result?.data?.timestamp || json?.result?.data?.syncedAt;
+      if (ts) {
+        setLastSync(new Date(ts).toLocaleTimeString());
       } else {
         setLastSync(new Date().toLocaleTimeString());
       }
@@ -52,6 +63,7 @@ export default function RateSettingsPage() {
     }
     setSyncing(false);
   }
+
 
   return (
     <div className="space-y-6 max-w-2xl">

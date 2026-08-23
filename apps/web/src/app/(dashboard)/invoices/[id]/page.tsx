@@ -66,7 +66,8 @@ export default function InvoiceDetailPage() {
     try {
       const res = await fetch(`/api/trpc/invoices.get?input=${encodeURIComponent(JSON.stringify(id))}`, { credentials: 'include' });
       const json = await res.json();
-      setInvoice(json?.result?.data?.data || null);
+      const data = json?.result?.data?.invoices ? json.result.data : (json?.result?.data?.data || null);
+      setInvoice(data);
     } catch { /* ignore */ }
   }
 
@@ -91,19 +92,28 @@ export default function InvoiceDetailPage() {
     try {
       const res = await fetch(`/api/trpc/pdf.download?input=${encodeURIComponent(JSON.stringify(id))}`, { credentials: 'include' });
       const json = await res.json();
-      const data = json?.result?.data?.data;
+      const data = json?.result?.data?.pdf ? json.result.data : json?.result?.data?.data;
       if (data?.pdf) {
-        const blob = new Uint8Array(atob(data.pdf).split('').map((c) => c.charCodeAt(0)));
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        const byteCharacters = atob(data.pdf);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = data.filename || `${invoice?.invoices.invoiceNumber}.pdf`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
     } catch { /* ignore */ }
     setDownloading(false);
   }
+
 
   if (!invoice) {
     return (

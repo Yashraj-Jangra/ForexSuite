@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
   const isAuthPage = authPages.some((p) => pathname === p);
   const isPublic =
     isAuthPage ||
+    pathname.startsWith('/api') ||
     pathname === '/' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/illustrations') ||
@@ -22,6 +23,7 @@ export function middleware(request: NextRequest) {
   if (!sessionCookie && !isAuthPage) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
+
 
   return NextResponse.next();
 }

@@ -29,7 +29,8 @@ export default function LutPage() {
     try {
       const res = await fetch('/api/trpc/luts.list', { credentials: 'include' });
       const json = await res.json();
-      setLuts(json?.result?.data?.data || []);
+      const data = Array.isArray(json?.result?.data) ? json.result.data : (json?.result?.data?.data || []);
+      setLuts(data);
     } catch { /* ignore */ }
   }
 
@@ -41,15 +42,17 @@ export default function LutPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/trpc/luts.create', {
+      const res = await fetch('/api/trpc/luts.create', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ referenceNumber, issuedDate, expiryDate, issuingAuthority }),
       });
-      setReferenceNumber('');
-      setShowForm(false);
-      load();
+      if (res.ok) {
+        setReferenceNumber('');
+        setShowForm(false);
+        await load();
+      }
     } catch { /* ignore */ }
     setSubmitting(false);
   }
@@ -62,9 +65,10 @@ export default function LutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(id),
       });
-      load();
+      await load();
     } catch { /* ignore */ }
   }
+
 
   const activeLut = luts.find((l) => l.isActive);
 

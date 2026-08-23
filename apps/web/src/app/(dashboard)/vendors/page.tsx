@@ -35,7 +35,8 @@ export default function VendorsPage() {
     try {
       const res = await fetch('/api/trpc/vendors.list', { credentials: 'include' });
       const json = await res.json();
-      setVendors(json?.result?.data?.data || []);
+      const data = Array.isArray(json?.result?.data) ? json.result.data : (json?.result?.data?.data || []);
+      setVendors(data);
     } catch { /* ignore */ }
   }
 
@@ -47,7 +48,7 @@ export default function VendorsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/trpc/vendors.create', {
+      const res = await fetch('/api/trpc/vendors.create', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -57,19 +58,22 @@ export default function VendorsPage() {
           country,
           bankName: bankName || undefined,
           bankAccountNumber: bankAccountNumber || undefined,
-          bankSwiftBic: bankSwiftBic || undefined,
+          bankSwift: bankSwiftBic || undefined,
         }),
       });
-      setName('');
-      setEmail('');
-      setBankName('');
-      setBankAccountNumber('');
-      setBankSwiftBic('');
-      setShowForm(false);
-      load();
+      if (res.ok) {
+        setName('');
+        setEmail('');
+        setBankName('');
+        setBankAccountNumber('');
+        setBankSwiftBic('');
+        setShowForm(false);
+        await load();
+      }
     } catch { /* ignore */ }
     setSubmitting(false);
   }
+
 
   const filteredVendors = vendors.filter(
     (v) =>

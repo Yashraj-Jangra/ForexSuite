@@ -35,8 +35,10 @@
 ---
 
 ### What Was Accomplished in Recent Sessions:
-- Fixed Better Auth authentication flow, session cookies, and Fastify route handling via Next.js reverse proxy.
-- Redesigned user interface: removed glitchy grain overlay, implemented Plus Jakarta Sans typography, refined dark mode to rich charcoal slate, and added 6 modern accent presets.
-- Built end-to-end statutory compliance engines for Indian & international exporters (RBI Form A2, FLM-8 Excel export, GST LUT, FIRC matching).
-- Verified type safety across `@vaultbill/api`, `@vaultbill/web`, `@vaultbill/db`, `@vaultbill/pdf`, `@vaultbill/shared`, `@vaultbill/config`, `@vaultbill/worker`.
+- **API Proxying & Auth Middleware**: Fixed `middleware.ts` which was erroneously intercepting and redirecting `/api/trpc/*` routes before Next.js rewrites could proxy requests to the Fastify backend on port 3001.
+- **tRPC Data Unwrapping**: Corrected double `.data` unwrapping across all dashboard, customer, vendor, invoice, LUT, FIRC, and LRS forms so database entities immediately render and reload.
+- **Invoice Number Generation**: Resolved integer overflow and regex parsing in `nextInvoiceNumber()` to reliably issue structured sequential invoice IDs (`INV-26-0001`).
+- **PDF Generation Engine**: Added system browser discovery (Google Chrome & Microsoft Edge) in `@vaultbill/pdf` for seamless client-side invoice and Form A2 PDF generation.
+- **UI/UX Modernization**: Clean midnight slate dark mode, Plus Jakarta Sans typography, and responsive modern navigation.
+
 

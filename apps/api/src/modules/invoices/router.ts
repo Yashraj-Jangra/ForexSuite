@@ -25,12 +25,22 @@ const createInvoiceInput = z.object({
 async function nextInvoiceNumber(ctxDb: any): Promise<string> {
   const year = new Date().getFullYear().toString().slice(-2);
   const [row] = await ctxDb
-    .select({ max: sql<number>`COALESCE(MAX(NULLIF(REGEXP_REPLACE(invoice_number, '\\D', '', 'g'), '')::int), 0)` })
+    .select({ invoiceNumber: invoices.invoiceNumber })
     .from(invoices)
-    .where(like(invoices.invoiceNumber, `INV-${year}-%`));
-  const next = (row?.max ?? 0) + 1;
+    .where(like(invoices.invoiceNumber, `INV-${year}-%`))
+    .orderBy(desc(invoices.createdAt))
+    .limit(1);
+
+  if (!row?.invoiceNumber) {
+    return `INV-${year}-0001`;
+  }
+
+  const parts = row.invoiceNumber.split('-');
+  const lastNum = parseInt(parts[parts.length - 1] || '0', 10);
+  const next = isNaN(lastNum) ? 1 : lastNum + 1;
   return `INV-${year}-${String(next).padStart(4, '0')}`;
 }
+
 
 async function getActiveLut(ctxDb: any) {
   const today = new Date().toISOString().split('T')[0] ?? '';

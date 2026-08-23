@@ -62,7 +62,8 @@ export default function Flm8Page() {
         credentials: 'include',
       });
       const json = await res.json();
-      setStatement(json?.result?.data?.data);
+      const stmt = json?.result?.data?.openingBalance !== undefined ? json.result.data : json?.result?.data?.data;
+      setStatement(stmt || null);
     } catch { /* ignore */ }
   }
 
@@ -74,7 +75,7 @@ export default function Flm8Page() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/trpc/forex.create', {
+      const res = await fetch('/api/trpc/forex.create', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -87,10 +88,12 @@ export default function Flm8Page() {
           customerName: txCustomer || undefined,
         }),
       });
-      setTxAmount('');
-      setTxCustomer('');
-      setShowForm(false);
-      loadStatement();
+      if (res.ok) {
+        setTxAmount('');
+        setTxCustomer('');
+        setShowForm(false);
+        await loadStatement();
+      }
     } catch { /* ignore */ }
     setSubmitting(false);
   }
@@ -102,21 +105,30 @@ export default function Flm8Page() {
         credentials: 'include',
       });
       const json = await res.json();
-      const data = json?.result?.data?.data;
-      if (data?.data) {
-        const blob = new Uint8Array(atob(data.data).split('').map((c) => c.charCodeAt(0)));
-        const url = URL.createObjectURL(
-          new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-        );
+      const fileData = json?.result?.data?.data ? json.result.data : json?.result?.data;
+      if (fileData?.data) {
+        const byteCharacters = atob(fileData.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = data.filename || `FLM8_${year}_${month}.xlsx`;
+        a.download = fileData.filename || `FLM8_${year}_${month}.xlsx`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
     } catch { /* ignore */ }
     setExporting(false);
   }
+
 
   const purchaseCats = txType === 'purchase' ? ['public', 'franchisee', 'ffmc_ad'] : ['btq', 'business', 'ffmc_ad'];
 

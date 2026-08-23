@@ -48,8 +48,10 @@ export default function FircPage() {
       ]);
       const fJson = await fRes.json();
       const iJson = await iRes.json();
-      setFircs(fJson?.result?.data?.data || []);
-      const invList = (iJson?.result?.data?.data || []).map((row: any) => row.invoices || row);
+      const fircList = Array.isArray(fJson?.result?.data) ? fJson.result.data : (fJson?.result?.data?.data || []);
+      setFircs(fircList);
+      const rawInvs = Array.isArray(iJson?.result?.data) ? iJson.result.data : (iJson?.result?.data?.data || []);
+      const invList = rawInvs.map((row: any) => row.invoices || row);
       setInvoices(invList);
     } catch { /* ignore */ }
   }
@@ -62,7 +64,7 @@ export default function FircPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/trpc/fircs.create', {
+      const res = await fetch('/api/trpc/fircs.create', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -74,11 +76,13 @@ export default function FircPage() {
           dateOfIssuance,
         }),
       });
-      setFircNumber('');
-      setIssuingBank('');
-      setAmount('');
-      setShowForm(false);
-      load();
+      if (res.ok) {
+        setFircNumber('');
+        setIssuingBank('');
+        setAmount('');
+        setShowForm(false);
+        await load();
+      }
     } catch { /* ignore */ }
     setSubmitting(false);
   }
@@ -95,9 +99,10 @@ export default function FircPage() {
       setLinkingFircId(null);
       setSelectedInvoiceId('');
       setLinkAmount('');
-      load();
+      await load();
     } catch { /* ignore */ }
   }
+
 
   return (
     <Container className="space-y-6">

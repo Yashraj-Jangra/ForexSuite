@@ -37,7 +37,8 @@ export default function CustomersPage() {
     try {
       const res = await fetch('/api/trpc/customers.list', { credentials: 'include' });
       const json = await res.json();
-      setCustomers(json?.result?.data?.data || []);
+      const data = Array.isArray(json?.result?.data) ? json.result.data : (json?.result?.data?.data || []);
+      setCustomers(data);
     } catch { /* ignore */ }
   }
 
@@ -49,7 +50,7 @@ export default function CustomersPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await fetch('/api/trpc/customers.create', {
+      const res = await fetch('/api/trpc/customers.create', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -63,17 +64,20 @@ export default function CustomersPage() {
           pan: pan ? pan.toUpperCase() : undefined,
         }),
       });
-      setName('');
-      setEmail('');
-      setPhone('');
-      setAddress('');
-      setGstin('');
-      setPan('');
-      setShowForm(false);
-      load();
+      if (res.ok) {
+        setName('');
+        setEmail('');
+        setPhone('');
+        setAddress('');
+        setGstin('');
+        setPan('');
+        setShowForm(false);
+        await load();
+      }
     } catch { /* ignore */ }
     setSubmitting(false);
   }
+
 
   const filteredCustomers = customers.filter(
     (c) =>

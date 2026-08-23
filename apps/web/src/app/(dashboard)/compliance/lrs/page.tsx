@@ -61,9 +61,11 @@ export default function LrsPage() {
         fetch('/api/trpc/remittances.list', { credentials: 'include' }).then((r) => r.json()),
         fetch('/api/trpc/remittances.purposeCodes', { credentials: 'include' }).then((r) => r.json()),
       ]);
-      setRemittances(r?.result?.data?.data || []);
-      setPurposeCodes(pc?.result?.data?.data || []);
-      if (pc?.result?.data?.data?.[0]) setPurposeCode(pc.result.data.data[0].code);
+      const remList = Array.isArray(r?.result?.data) ? r.result.data : (r?.result?.data?.data || []);
+      setRemittances(remList);
+      const pcList = Array.isArray(pc?.result?.data) ? pc.result.data : (pc?.result?.data?.data || []);
+      setPurposeCodes(pcList);
+      if (pcList[0]) setPurposeCode(pcList[0].code);
     } catch { /* ignore */ }
   }
 
@@ -87,9 +89,12 @@ export default function LrsPage() {
 
   async function checkCumulative() {
     if (!panQuery) return;
-    const res = await fetch(`/api/trpc/remittances.cumulative?input=${encodeURIComponent(JSON.stringify(panQuery.toUpperCase()))}`, { credentials: 'include' });
-    const json = await res.json();
-    setCumulative(json?.result?.data?.data);
+    try {
+      const res = await fetch(`/api/trpc/remittances.cumulative?input=${encodeURIComponent(JSON.stringify(panQuery.toUpperCase()))}`, { credentials: 'include' });
+      const json = await res.json();
+      const cumData = json?.result?.data?.total !== undefined ? json.result.data : json?.result?.data?.data;
+      setCumulative(cumData);
+    } catch { /* ignore */ }
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -121,7 +126,7 @@ export default function LrsPage() {
         setRemitterPan('');
         setBeneficiaryName('');
         setAmountForeign('');
-        load();
+        await load();
       }
     } catch { /* ignore */ }
     setSubmitting(false);
@@ -132,19 +137,28 @@ export default function LrsPage() {
     try {
       const res = await fetch(`/api/trpc/remittances.formA2?input=${encodeURIComponent(JSON.stringify(id))}`, { credentials: 'include' });
       const json = await res.json();
-      const data = json?.result?.data?.data;
+      const data = json?.result?.data?.pdf ? json.result.data : json?.result?.data?.data;
       if (data?.pdf) {
-        const blob = new Uint8Array(atob(data.pdf).split('').map((c) => c.charCodeAt(0)));
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        const byteCharacters = atob(data.pdf);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = data.filename || `Form_A2_${pan}.pdf`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
     } catch { /* ignore */ }
     setDownloadingId(null);
   }
+
 
   return (
     <Container className="space-y-6">

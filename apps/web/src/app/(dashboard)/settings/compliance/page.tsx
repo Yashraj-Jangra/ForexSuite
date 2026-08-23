@@ -12,10 +12,11 @@ export default function ComplianceSettingsPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    fetch('/api/trpc/settings.get?input=%22compliance%22', { credentials: 'include' })
+    fetch('/api/trpc/settings.get', { credentials: 'include' })
       .then((r) => r.json())
       .then((j) => {
-        const val = j?.result?.data?.data?.value;
+        const settingsData = j?.result?.data;
+        const val = settingsData?.compliance;
         if (val) {
           if (typeof val.exporter === 'boolean') setExporter(val.exporter);
           if (typeof val.moneyChanger === 'boolean') setMoneyChanger(val.moneyChanger);
@@ -23,6 +24,7 @@ export default function ComplianceSettingsPage() {
       })
       .catch(() => {});
   }, []);
+
 
   async function handleSave() {
     setSaving(true);

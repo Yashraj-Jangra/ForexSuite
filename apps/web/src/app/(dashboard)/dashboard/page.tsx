@@ -73,14 +73,25 @@ export default function DashboardPage() {
         fetch('/api/trpc/rates.latest', { credentials: 'include' }).then((r) => r.json()).catch(() => null),
       ]);
 
-      if (femaRes?.result?.data) setAlerts(femaRes.result.data);
-      if (invRes?.result?.data?.data) setInvoices(invRes.result.data.data);
-      if (custRes?.result?.data?.data) setCustomerCount(custRes.result.data.data.length);
-      if (lutRes?.result?.data?.[0]) setActiveLut(lutRes.result.data[0]);
-      if (ratesRes?.result?.data) setRates(ratesRes.result.data);
+      if (femaRes?.result?.data) {
+        setAlerts(Array.isArray(femaRes.result.data) ? femaRes.result.data : (femaRes.result.data.data || []));
+      }
+      const invList = Array.isArray(invRes?.result?.data) ? invRes.result.data : (invRes?.result?.data?.data || []);
+      setInvoices(invList);
+
+      const custList = Array.isArray(custRes?.result?.data) ? custRes.result.data : (custRes?.result?.data?.data || []);
+      setCustomerCount(custList.length);
+
+      const lutList = Array.isArray(lutRes?.result?.data) ? lutRes.result.data : (lutRes?.result?.data?.data || []);
+      setActiveLut(lutList[0] || null);
+
+      if (ratesRes?.result?.data) {
+        setRates(Array.isArray(ratesRes.result.data) ? ratesRes.result.data : (ratesRes.result.data.data || []));
+      }
     } catch { /* ignore */ }
     setLoading(false);
   }
+
 
   useEffect(() => {
     loadData();
