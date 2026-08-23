@@ -1,4 +1,26 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import dotenv from 'dotenv';
 import { z } from 'zod';
+
+function initEnv() {
+  let current = path.resolve(process.cwd());
+  while (true) {
+    const candidate = path.join(current, '.env');
+    if (fs.existsSync(candidate)) {
+      dotenv.config({ path: candidate });
+      break;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      dotenv.config();
+      break;
+    }
+    current = parent;
+  }
+}
+
+initEnv();
 
 export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
@@ -20,6 +42,7 @@ export const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function loadEnv(): Env {
+  initEnv();
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
     console.error('Invalid environment variables:', result.error.flatten());

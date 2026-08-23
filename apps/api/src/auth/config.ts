@@ -21,7 +21,8 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
-  trustedOrigins: [env.BETTER_AUTH_URL],
-  baseURL: env.BETTER_AUTH_URL,
+  trustedOrigins: ['http://localhost:3000', 'http://127.0.0.1:3000', env.BETTER_AUTH_URL],
+  baseURL: `http://localhost:${env.API_PORT}`,
+  basePath: '/api/auth',
   secret: env.BETTER_AUTH_SECRET,
 });

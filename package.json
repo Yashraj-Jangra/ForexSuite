@@ -3,13 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "pnpm --workspace-root infra:up && pnpm dev",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "clean": "turbo clean",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "infra:up": "docker compose -f docker/compose.dev.yml up -d 2>nul || wsl docker compose -f docker/compose.dev.yml up -d 2>nul || echo WARNING: Docker not found. Start Postgres, Redis, and MinIO manually.",
+    "infra:down": "docker compose -f docker/compose.dev.yml down 2>nul || wsl docker compose -f docker/compose.dev.yml down 2>nul || echo Docker not found. Stop services manually.",
+    "infra:logs": "docker compose -f docker/compose.dev.yml logs -f 2>nul || wsl docker compose -f docker/compose.dev.yml logs -f",
+    "setup": "pnpm install && pnpm --workspace-root run db:migrate",
+    "db:migrate": "pnpm --filter @vaultbill/db push"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

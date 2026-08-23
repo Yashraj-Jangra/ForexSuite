@@ -7,7 +7,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 const trpcClient = createTRPCClient<any>({
   links: [
     httpBatchLink({
-      url: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001') + '/api/trpc',
+      url: (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')) + '/api/trpc',
       fetch(url, opts) {
         return fetch(url, { ...opts, credentials: 'include' });
       },

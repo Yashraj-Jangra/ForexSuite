@@ -28,8 +28,8 @@ export default function OnboardPage() {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        setError(text || 'Failed to create workspace');
+        const data = await res.json().catch(() => null);
+        setError(data?.error?.message || 'Failed to create workspace');
         return;
       }
 

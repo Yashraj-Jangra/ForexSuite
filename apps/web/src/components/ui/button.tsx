@@ -34,9 +34,28 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', asChild = false, loading, disabled, children, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button';
-    const content = (
-      <>
+    const classes = cn(
+      'inline-flex items-center justify-center whitespace-nowrap rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+      variants[variant],
+      sizes[size],
+      className,
+    );
+
+    if (asChild) {
+      return (
+        <Slot ref={ref} className={classes}>
+          {children}
+        </Slot>
+      );
+    }
+
+    return (
+      <button
+        ref={ref}
+        disabled={disabled || loading}
+        className={classes}
+        {...props}
+      >
         {loading && (
           <svg
             className="animate-spin shrink-0"
@@ -54,22 +73,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {children}
-      </>
-    );
-    return (
-      <Comp
-        ref={ref}
-        disabled={disabled || loading}
-        className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-          variants[variant],
-          sizes[size],
-          className,
-        )}
-        {...props}
-      >
-        {asChild ? children : content}
-      </Comp>
+      </button>
     );
   },
 );

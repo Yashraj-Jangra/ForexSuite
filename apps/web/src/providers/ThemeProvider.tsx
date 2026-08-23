@@ -127,13 +127,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   /* prevent flash of wrong theme */
   if (!mounted) {
-    return (
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `(function(){try{var c=JSON.parse(localStorage.getItem('${STORAGE_KEY}'));var m=c.mode||'system';var d=m==='system'?window.matchMedia('(prefers-color-scheme:dark)').matches:m==='dark';document.documentElement.classList.toggle('dark',d);document.documentElement.setAttribute('data-accent',c.accent||'sage');document.documentElement.setAttribute('data-radius',c.radius||'rounded');}catch(e){}})()`,
-        }}
-      />
-    );
+    return null;
   }
 
   return (

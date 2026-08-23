@@ -2,9 +2,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   const authPages = ['/login', '/signup', '/onboard'];
-  const isAuthPage = authPages.some((p) => request.nextUrl.pathname === p);
-  const isPublic = isAuthPage || request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/_next') || request.nextUrl.pathname.startsWith('/illustrations');
+  const isAuthPage = authPages.some((p) => pathname === p);
+  const isPublic =
+    isAuthPage ||
+    pathname === '/' ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/illustrations') ||
+    pathname === '/sw.js' ||
+    pathname === '/manifest.json' ||
+    pathname === '/offline.html' ||
+    pathname === '/favicon.ico';
 
   if (isPublic) return NextResponse.next();
 
@@ -18,5 +27,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|offline.html).*)'],
 };
