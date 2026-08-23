@@ -14,6 +14,7 @@ import { lutRouter } from '../modules/luts/router';
 import { taxRouter } from '../modules/tax/router';
 import { fircRouter } from '../modules/fircs/router';
 import { femaRouter } from '../modules/fema/router';
+import { remittanceRouter } from '../modules/remittances/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -63,6 +64,7 @@ export const appRouter = router({
   tax: taxRouter,
   fircs: fircRouter,
   fema: femaRouter,
+  remittances: remittanceRouter,
 });
 
 export type AppRouter = typeof appRouter;

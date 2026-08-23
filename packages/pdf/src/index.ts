@@ -13,3 +13,4 @@ export async function generatePdf(html: string): Promise<Buffer> {
 }
 
 export { renderInvoiceHtml } from './templates/invoice';
+export { renderFormA2Html } from './templates/formA2';

@@ -126,3 +126,34 @@ export const fircs = pgTable('fircs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const remittances = pgTable('remittances', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  remitterName: text('remitter_name').notNull(),
+  remitterPan: text('remitter_pan').notNull(),
+  remitterAadhaar: text('remitter_aadhaar'),
+  remitterAccount: text('remitter_account'),
+  beneficiaryName: text('beneficiary_name').notNull(),
+  beneficiaryBankDetails: text('beneficiary_bank_details'),
+  beneficiaryCountry: text('beneficiary_country').notNull(),
+  purposeCode: text('purpose_code').notNull(),
+  purposeDescription: text('purpose_description'),
+  amountForeign: numeric('amount_foreign').notNull(),
+  currency: text('currency').notNull(),
+  exchangeRate: numeric('exchange_rate'),
+  amountInr: numeric('amount_inr'),
+  tcsPercentage: numeric('tcs_percentage'),
+  tcsAmount: numeric('tcs_amount'),
+  panFinancialYearRemitted: numeric('pan_financial_year_remitted_total'),
+  formA2PdfPath: text('form_a2_pdf_path'),
+  status: text('status').notNull().default('pending'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const rbiPurposeCodes = pgTable('rbi_purpose_codes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  code: text('code').notNull().unique(),
+  category: text('category').notNull(),
+  description: text('description').notNull(),
+});
