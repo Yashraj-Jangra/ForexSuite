@@ -19,6 +19,7 @@ import { remittanceRouter } from '../modules/remittances/router';
 import { forexRouter } from '../modules/forex/router';
 import { notificationRouter } from '../modules/notifications/router';
 import { settingsRouter } from '../modules/settings/router';
+import { businessProfileRouter } from '../modules/business-profile/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -78,6 +79,7 @@ export const appRouter = router({
   forex: forexRouter,
   notifications: notificationRouter,
   settings: settingsRouter,
+  businessProfile: businessProfileRouter,
 });
 
 export type AppRouter = typeof appRouter;

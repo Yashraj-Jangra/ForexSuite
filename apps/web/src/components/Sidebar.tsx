@@ -18,8 +18,9 @@ import {
   Moon,
   Sun,
   ChevronDown,
+  Building,
+  Sparkles,
 } from 'lucide-react';
-
 import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -52,7 +53,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       .then((j) => {
         if (j?.result?.data) setUser(j.result.data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     fetch('/api/trpc/tenants', { credentials: 'include' })
       .then((r) => r.json())
@@ -60,7 +61,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         const list = j?.result?.data || [];
         if (list[0]?.tenants) setTenant(list[0].tenants);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   async function handleSignOut() {
@@ -167,13 +168,26 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             onClick={onClose}
             className={cn(
               'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all',
-              pathname.startsWith('/settings')
+              pathname === '/settings'
                 ? 'bg-accent text-white shadow-sm'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
             )}
           >
             <Settings className="size-4 shrink-0" />
             <span>Settings</span>
+          </Link>
+          <Link
+            href="/settings/profile"
+            onClick={onClose}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all',
+              pathname.startsWith('/settings/profile')
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
+            )}
+          >
+            <Building2 className="size-4 shrink-0" />
+            <span>Business Profile</span>
           </Link>
         </div>
       </nav>

@@ -13,9 +13,19 @@ type Customer = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  city: string | null;
+  state: string | null;
   country: string;
+  pincode: string | null;
   gstin: string | null;
   pan: string | null;
+  // KYC
+  passportNumber: string | null;
+  nationality: string | null;
+  gender: string | null;
+  defaultPurpose: string | null;
+  placeOfSupply: string | null;
+  defaultDestinationCountry: string | null;
   createdAt: string;
 };
 
@@ -28,9 +38,19 @@ export default function CustomersPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [country, setCountry] = useState('US');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [country, setCountry] = useState('IN');
   const [gstin, setGstin] = useState('');
   const [pan, setPan] = useState('');
+  // KYC
+  const [passportNumber, setPassportNumber] = useState('');
+  const [nationality, setNationality] = useState('INDIAN');
+  const [gender, setGender] = useState('Ms.');
+  const [defaultPurpose, setDefaultPurpose] = useState('PRIVATE VISIT');
+  const [placeOfSupply, setPlaceOfSupply] = useState('');
+  const [defaultDestinationCountry, setDefaultDestinationCountry] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   async function load() {
@@ -59,18 +79,26 @@ export default function CustomersPage() {
           email: email || undefined,
           phone: phone || undefined,
           address: address || undefined,
+          city: city || undefined,
+          state: state || undefined,
+          pincode: pincode || undefined,
           country,
           gstin: gstin || undefined,
           pan: pan ? pan.toUpperCase() : undefined,
+          passportNumber: passportNumber || undefined,
+          nationality: nationality || 'INDIAN',
+          gender: gender || 'Ms.',
+          defaultPurpose: defaultPurpose || undefined,
+          placeOfSupply: placeOfSupply || undefined,
+          defaultDestinationCountry: defaultDestinationCountry || undefined,
         }),
       });
       if (res.ok) {
-        setName('');
-        setEmail('');
-        setPhone('');
-        setAddress('');
-        setGstin('');
-        setPan('');
+        setName(''); setEmail(''); setPhone(''); setAddress('');
+        setCity(''); setState(''); setPincode('');
+        setGstin(''); setPan(''); setPassportNumber(''); setNationality('INDIAN');
+        setGender('Ms.'); setDefaultPurpose('PRIVATE VISIT');
+        setPlaceOfSupply(''); setDefaultDestinationCountry('');
         setShowForm(false);
         await load();
       }
@@ -128,46 +156,76 @@ export default function CustomersPage() {
           </div>
 
           <form onSubmit={handleCreate} className="space-y-4 text-xs">
+            {/* Basic Info */}
             <div className="grid sm:grid-cols-2 gap-3">
-              <Input label="Company / Customer Name *" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Input label="Full Name *" value={name} onChange={(e) => setName(e.target.value)} required />
               <Input label="Email Address" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
 
             <div className="grid sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1">Country *</label>
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm"
-                >
+                <select value={country} onChange={(e) => setCountry(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm">
+                  <option value="IN">India (IN)</option>
                   <option value="US">United States (US)</option>
                   <option value="GB">United Kingdom (GB)</option>
                   <option value="DE">Germany (DE)</option>
                   <option value="AE">United Arab Emirates (AE)</option>
                   <option value="SG">Singapore (SG)</option>
-                  <option value="IN">India (IN)</option>
                   <option value="CA">Canada (CA)</option>
                   <option value="AU">Australia (AU)</option>
+                  <option value="NL">Netherlands (NL)</option>
+                  <option value="FR">France (FR)</option>
                 </select>
               </div>
-
               <Input label="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Input label="PAN (if Indian entity)" value={pan} onChange={(e) => setPan(e.target.value.toUpperCase())} maxLength={10} />
+              <Input label="PAN" value={pan} onChange={(e) => setPan(e.target.value.toUpperCase())} maxLength={10} className="font-mono" />
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
-              <Input label="GSTIN (if Indian registered)" value={gstin} onChange={(e) => setGstin(e.target.value)} />
-              <Input label="Physical Address / Location" value={address} onChange={(e) => setAddress(e.target.value)} />
+              <Input label="Address" value={address} onChange={(e) => setAddress(e.target.value)} />
+              <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
+              <Input label="State" value={state} onChange={(e) => setState(e.target.value)} />
+              <Input label="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} />
+              <Input label="GSTIN" value={gstin} onChange={(e) => setGstin(e.target.value)} />
+            </div>
+
+            {/* KYC Section */}
+            <div className="border-t border-border pt-3">
+              <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5">
+                <span className="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded font-bold">KYC</span>
+                Identity Details — saved for auto-fill on Cash Memo invoices
+              </p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Gender (for narrative)</label>
+                  <select value={gender} onChange={(e) => setGender(e.target.value)}
+                    className="w-full h-8 rounded-xl border border-input bg-background text-xs px-2">
+                    <option value="Ms.">Ms.</option>
+                    <option value="Mr.">Mr.</option>
+                    <option value="M/s.">M/s.</option>
+                  </select>
+                </div>
+                <Input label="Passport Number" value={passportNumber} onChange={(e) => setPassportNumber(e.target.value.toUpperCase())} className="font-mono" />
+                <Input label="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value.toUpperCase())} />
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3 mt-3">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground block mb-1">Default Purpose</label>
+                  <select value={defaultPurpose} onChange={(e) => setDefaultPurpose(e.target.value)}
+                    className="w-full h-8 rounded-xl border border-input bg-background text-xs px-2">
+                    {['PRIVATE VISIT','BUSINESS','EDUCATION','MEDICAL TREATMENT','EMPLOYMENT','EMIGRATION','OTHERS'].map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <Input label="Place of Supply (e.g. (06) HARYANA)" value={placeOfSupply} onChange={(e) => setPlaceOfSupply(e.target.value)} />
+                <Input label="Default Destination Country" value={defaultDestinationCountry} onChange={(e) => setDefaultDestinationCountry(e.target.value.toUpperCase())} />
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" size="sm" disabled={submitting}>
-                {submitting ? 'Saving...' : 'Save Customer'}
-              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="submit" size="sm" disabled={submitting}>{submitting ? 'Saving...' : 'Save Customer'}</Button>
             </div>
           </form>
         </Card>
@@ -197,13 +255,27 @@ export default function CustomersPage() {
               {c.address && (
                 <div className="flex items-center gap-1.5">
                   <MapPin className="size-3 text-muted-foreground shrink-0" />
-                  <span className="truncate">{c.address}</span>
+                  <span className="truncate">{c.address}{c.city ? `, ${c.city}` : ''}</span>
+                </div>
+              )}
+              {c.pan && (
+                <div className="text-[11px] font-mono">
+                  PAN: <strong className="text-foreground">{c.pan}</strong>
+                </div>
+              )}
+              {c.passportNumber && (
+                <div className="text-[11px] font-mono">
+                  Passport: <strong className="text-foreground">{c.passportNumber}</strong>
+                  {c.nationality && <span className="ml-1 text-muted-foreground">({c.nationality})</span>}
                 </div>
               )}
               {c.gstin && (
                 <div className="text-[11px] font-mono text-muted-foreground">
                   GSTIN: <strong className="text-foreground">{c.gstin}</strong>
                 </div>
+              )}
+              {c.defaultPurpose && (
+                <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">{c.defaultPurpose}</span>
               )}
             </div>
           </Card>

@@ -22,6 +22,13 @@ export const customers = pgTable('customers', {
   pincode: text('pincode'),
   gstin: text('gstin'),
   pan: text('pan'),
+  // KYC / Identity fields for FFMC Cash Memo
+  passportNumber: text('passport_number'),
+  nationality: text('nationality').default('INDIAN'),
+  gender: text('gender').default('Ms.'),            // Mr. / Ms. / M/s.
+  defaultPurpose: text('default_purpose'),          // PRIVATE VISIT, BUSINESS, EDUCATION, MEDICAL
+  placeOfSupply: text('place_of_supply'),           // e.g. (06) HARYANA
+  defaultDestinationCountry: text('default_destination_country'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -49,6 +56,7 @@ export const exchangeRates = pgTable('exchange_rates', {
 export const invoices = pgTable('invoices', {
   id: uuid('id').primaryKey().defaultRandom(),
   invoiceNumber: text('invoice_number').notNull().unique(),
+  invoiceType: text('invoice_type').default('tax_invoice'), // cash_memo | tax_invoice | export_invoice
   customerId: uuid('customer_id').references(() => customers.id),
   currency: text('currency').notNull(),
   exchangeRate: numeric('exchange_rate'),
@@ -63,6 +71,24 @@ export const invoices = pgTable('invoices', {
   shippingBillNumber: text('shipping_bill_number'),
   portOfLoading: text('port_of_loading'),
   dateOfExport: date('date_of_export'),
+  // Cash Memo / Forex fields
+  saleDate: date('sale_date'),
+  placeOfSupply: text('place_of_supply'),
+  paymentMode: text('payment_mode').default('CASH'),       // CASH | CARD | UPI | NEFT
+  paymentReference: text('payment_reference'),
+  transactionNarrative: text('transaction_narrative'),
+  gstTaxableAmount: numeric('gst_taxable_amount'),
+  cgstRate: numeric('cgst_rate'),
+  cgstAmount: numeric('cgst_amount'),
+  sgstRate: numeric('sgst_rate'),
+  sgstAmount: numeric('sgst_amount'),
+  igstRate: numeric('igst_rate'),
+  igstAmount: numeric('igst_amount'),
+  roundOff: numeric('round_off'),
+  lrsLine: text('lrs_line'),
+  amountInWords: text('amount_in_words'),
+  disclaimer1: text('disclaimer1'),
+  disclaimer2: text('disclaimer2'),
   issuedAt: timestamp('issued_at').defaultNow().notNull(),
   dueAt: timestamp('due_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -82,6 +108,12 @@ export const invoiceItems = pgTable('invoice_items', {
   amount: numeric('amount').notNull(),
   hsnCode: text('hsn_code'),
   gstRate: numeric('gst_rate'),
+  // Forex / Cash Memo specific
+  currencyName: text('currency_name'),                    // e.g. EURO CURRENCY - -CN
+  sacCode: text('sac_code'),                              // default 997157
+  amountForeign: numeric('amount_foreign'),               // foreign currency amount
+  itemExchangeRate: numeric('item_exchange_rate'),         // rate used for this line
+  amountInr: numeric('amount_inr'),                       // computed: amountForeign * rate
 }, (table) => ({
   invoiceIdIdx: index('invoice_items_invoice_id_idx').on(table.invoiceId),
 }));
@@ -188,6 +220,43 @@ export const settings = pgTable('settings', {
   id: uuid('id').primaryKey().defaultRandom(),
   key: text('key').notNull(),
   value: text('value').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const businessProfile = pgTable('business_profile', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  // Company identity
+  companyName: text('company_name').notNull().default(''),
+  address1: text('address1').default(''),
+  address2: text('address2').default(''),
+  city: text('city').default(''),
+  state: text('state').default(''),
+  stateCode: text('state_code').default(''),
+  pincode: text('pincode').default(''),
+  phone: text('phone').default(''),
+  email: text('email').default(''),
+  website: text('website').default(''),
+  // Regulatory identifiers
+  rbiLicenceNo: text('rbi_licence_no').default(''),
+  cin: text('cin').default(''),
+  pan: text('pan').default(''),
+  gstin: text('gstin').default(''),
+  // Assets
+  logoBase64: text('logo_base64'),
+  signatureBase64: text('signature_base64'),
+  // Invoice number configuration
+  invoiceNumberFormat: text('invoice_number_format').default('INV-{YY}-{SEQ}'),
+  invoiceNumberSeed: integer('invoice_number_seed').default(0),
+  // GST defaults
+  defaultSacCode: text('default_sac_code').default('997157'),
+  defaultCgstRate: numeric('default_cgst_rate').default('9'),
+  defaultSgstRate: numeric('default_sgst_rate').default('9'),
+  defaultIgstRate: numeric('default_igst_rate').default('18'),
+  defaultGstTaxableBasePct: numeric('default_gst_taxable_base_pct').default('1'),
+  // Defaults
+  disclaimer1: text('disclaimer1').default('Please count your money before leaving the counter.'),
+  disclaimer2: text('disclaimer2').default('If any dispute arises against this invoice by any Law Enforcement Agency/Cyber Crime Cell/Any Regulating Authority, Clients will be solely responsible for the same.'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
