@@ -110,3 +110,19 @@ export const lutRegistrations = pgTable('lut_registrations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export const fircs = pgTable('fircs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  fircNumber: text('firc_number').notNull(),
+  issuingBank: text('issuing_bank').notNull(),
+  dateOfIssuance: date('date_of_issuance').notNull(),
+  amount: numeric('amount').notNull(),
+  currency: text('currency').notNull(),
+  exchangeRate: numeric('exchange_rate'),
+  amountInr: numeric('amount_inr'),
+  purposeCode: text('purpose_code'),
+  pdfPath: text('pdf_path'),
+  unmappedAmountInr: numeric('unmapped_amount_inr'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

@@ -12,6 +12,8 @@ import { pdfRouter } from '../modules/invoices/pdf';
 import { rateRouter } from '../modules/rates/router';
 import { lutRouter } from '../modules/luts/router';
 import { taxRouter } from '../modules/tax/router';
+import { fircRouter } from '../modules/fircs/router';
+import { femaRouter } from '../modules/fema/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -59,6 +61,8 @@ export const appRouter = router({
   rates: rateRouter,
   luts: lutRouter,
   tax: taxRouter,
+  fircs: fircRouter,
+  fema: femaRouter,
 });
 
 export type AppRouter = typeof appRouter;
