@@ -1,4 +1,5 @@
 import { tenantMembers, tenants, users } from '@vaultbill/db/schemas/public';
+import { provisionTenantSchema } from '@vaultbill/db/provision';
 import { db } from '@vaultbill/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -11,8 +12,8 @@ export const appRouter = router({
   })),
 
   me: protectedProcedure.query(async ({ ctx }) => {
-    const user = await db.select().from(users).where(eq(users.id, ctx.userId)).limit(1);
-    return user[0] ?? null;
+    const [user] = await db.select().from(users).where(eq(users.id, ctx.userId)).limit(1);
+    return user ?? null;
   }),
 
   tenants: protectedProcedure.query(async ({ ctx }) => {
@@ -24,7 +25,7 @@ export const appRouter = router({
   }),
 
   createTenant: protectedProcedure
-    .input(z.object({ name: z.string().min(1).max(100), slug: z.string().min(1).max(50) }))
+    .input(z.object({ name: z.string().min(1).max(100), slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/) }))
     .mutation(async ({ ctx, input }) => {
       const [tenant] = await db
         .insert(tenants)
@@ -32,6 +33,8 @@ export const appRouter = router({
         .returning();
 
       if (!tenant) throw new Error('Failed to create tenant');
+
+      await provisionTenantSchema(tenant.id);
 
       await db
         .insert(tenantMembers)
