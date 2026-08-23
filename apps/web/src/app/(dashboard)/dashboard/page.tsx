@@ -74,7 +74,16 @@ export default function DashboardPage() {
       ]);
 
       if (femaRes?.result?.data) {
-        setAlerts(Array.isArray(femaRes.result.data) ? femaRes.result.data : (femaRes.result.data.data || []));
+        const raw = femaRes.result.data;
+        const alertObj = raw?.critical ? raw : raw?.data;
+        if (alertObj) {
+          setAlerts({
+            critical: alertObj.critical || [],
+            warning: alertObj.warning || [],
+            ok: alertObj.ok || [],
+            total: alertObj.total || 0,
+          });
+        }
       }
       const invList = Array.isArray(invRes?.result?.data) ? invRes.result.data : (invRes?.result?.data?.data || []);
       setInvoices(invList);
@@ -91,7 +100,6 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
     setLoading(false);
   }
-
 
   useEffect(() => {
     loadData();
@@ -117,6 +125,10 @@ export default function DashboardPage() {
       setConvertedResult(Math.round((num / usdFrom) * usdTo * 100) / 100);
     }
   }, [amount, fromCurr, toCurr, rates]);
+
+  const criticalCount = alerts?.critical?.length ?? 0;
+  const warningCount = alerts?.warning?.length ?? 0;
+  const alertCount = criticalCount + warningCount;
 
   return (
     <div className="space-y-6">
@@ -174,7 +186,7 @@ export default function DashboardPage() {
               <FileText className="size-4" />
             </div>
           </div>
-          <p className="text-2xl font-extrabold font-mono tracking-tight">{invoices.length > 0 ? invoices.length : alerts.total}</p>
+          <p className="text-2xl font-extrabold font-mono tracking-tight">{invoices.length > 0 ? invoices.length : (alerts?.total ?? 0)}</p>
           <p className="text-[11px] text-muted-foreground">Total logged in workspace</p>
         </Card>
 
@@ -192,7 +204,7 @@ export default function DashboardPage() {
         <Card
           padding="md"
           className={`space-y-2 transition-colors ${
-            alerts.critical.length > 0 ? 'border-rose-500/40 bg-rose-500/5' : 'hover:border-accent/40'
+            criticalCount > 0 ? 'border-rose-500/40 bg-rose-500/5' : 'hover:border-accent/40'
           }`}
         >
           <div className="flex items-center justify-between">
@@ -201,15 +213,16 @@ export default function DashboardPage() {
               <AlertTriangle className="size-4" />
             </div>
           </div>
-          <p className={`text-2xl font-extrabold font-mono tracking-tight ${alerts.critical.length > 0 ? 'text-rose-500' : ''}`}>
-            {alerts.critical.length + alerts.warning.length}
+          <p className={`text-2xl font-extrabold font-mono tracking-tight ${criticalCount > 0 ? 'text-rose-500' : ''}`}>
+            {alertCount}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            {alerts.critical.length > 0 ? `${alerts.critical.length} realization deadlines` : 'All invoices within limits'}
+            {criticalCount > 0 ? `${criticalCount} realization deadlines` : 'All invoices within limits'}
           </p>
         </Card>
 
         <Card padding="md" className="space-y-2 hover:border-accent/40 transition-colors">
+
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Export LUT</p>
             <div className={`p-2 rounded-lg ${activeLut ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'}`}>

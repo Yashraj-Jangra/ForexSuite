@@ -18,9 +18,8 @@ import {
   Moon,
   Sun,
   ChevronDown,
-  Building,
-  Sparkles,
 } from 'lucide-react';
+
 import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useTheme } from '@/providers/ThemeProvider';
