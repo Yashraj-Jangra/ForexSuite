@@ -5,6 +5,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'VaultBill — Multi-Currency Invoicing',
   description: 'Self-hosted invoicing and compliance platform for multi-currency businesses',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
