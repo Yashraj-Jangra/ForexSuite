@@ -120,6 +120,19 @@ const TENANT_TABLES = [
     "description" text NOT NULL,
     CONSTRAINT "tenant_{id}_purpose_codes_unique" UNIQUE("code")
   )`,
+  `CREATE TABLE "tenant_{id}"."forex_transactions" (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "transaction_date" date NOT NULL,
+    "currency" text NOT NULL,
+    "transaction_type" text NOT NULL,
+    "category" text NOT NULL,
+    "amount" numeric NOT NULL,
+    "conversion_rate" numeric,
+    "customer_name" text,
+    "customer_passport_kyc" text,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL
+  )`,
 ];
 
 const TENANT_FOREIGN_KEYS = [

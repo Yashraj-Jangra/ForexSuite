@@ -157,3 +157,17 @@ export const rbiPurposeCodes = pgTable('rbi_purpose_codes', {
   category: text('category').notNull(),
   description: text('description').notNull(),
 });
+
+export const forexTransactions = pgTable('forex_transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  transactionDate: date('transaction_date').notNull(),
+  currency: text('currency').notNull(),
+  transactionType: text('transaction_type').$type<'purchase' | 'sale'>().notNull(),
+  category: text('category').notNull(),
+  amount: numeric('amount').notNull(),
+  conversionRate: numeric('conversion_rate'),
+  customerName: text('customer_name'),
+  customerPassportKyc: text('customer_passport_kyc'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
