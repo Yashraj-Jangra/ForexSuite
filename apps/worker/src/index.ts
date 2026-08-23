@@ -1,23 +1,20 @@
 import 'dotenv/config';
 import { Queue, Worker } from 'bullmq';
 import { loadEnv } from '@vaultbill/config';
+import { sendNotification } from './jobs/processors';
+import type { NotificationPayload } from './jobs/processors';
 
 const env = loadEnv();
-
 const connection = { url: env.REDIS_URL };
 
-const _rateSyncQueue = new Queue('rate-sync', { connection });
-
-const worker = new Worker(
-  'rate-sync',
+new Worker<NotificationPayload>(
+  'notifications',
   async (job) => {
-    console.log(`Processing job: ${job.id}`);
+    console.log(`Processing ${job.data.type} via ${job.data.channel}`);
+    const result = await sendNotification(job.data);
+    console.log(`Done: ${JSON.stringify(result)}`);
   },
   { connection },
 );
 
-worker.on('completed', (job) => {
-  console.log(`Job ${job.id} completed`);
-});
-
-console.log('Worker started');
+console.log('Worker started — listening for notifications');
