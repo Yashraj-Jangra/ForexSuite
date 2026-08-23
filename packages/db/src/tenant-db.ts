@@ -169,6 +169,14 @@ function createTenantDb(tenantId: string) {
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   });
 
+  const settings = s.table('settings', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    key: text('key').notNull(),
+    value: text('value').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  });
+
   return drizzle(pool, {
     schema: {
       customers,
@@ -182,6 +190,7 @@ function createTenantDb(tenantId: string) {
       remittances,
       rbiPurposeCodes,
       forexTransactions,
+      settings,
     },
   });
 }

@@ -18,6 +18,7 @@ import { femaRouter } from '../modules/fema/router';
 import { remittanceRouter } from '../modules/remittances/router';
 import { forexRouter } from '../modules/forex/router';
 import { notificationRouter } from '../modules/notifications/router';
+import { settingsRouter } from '../modules/settings/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -76,6 +77,7 @@ export const appRouter = router({
   remittances: remittanceRouter,
   forex: forexRouter,
   notifications: notificationRouter,
+  settings: settingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

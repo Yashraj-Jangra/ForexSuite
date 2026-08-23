@@ -15,6 +15,7 @@ export default function NewInvoicePage() {
   const [customerId, setCustomerId] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [dueAt, setDueAt] = useState('');
+  const [isExport, setIsExport] = useState(false);
   const [items, setItems] = useState([{ description: '', quantity: 1, unitPrice: 0 }]);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function NewInvoicePage() {
         customerId,
         currency,
         dueAt: dueAt || undefined,
+        isExport,
         items: items.filter((i) => i.description),
       }),
     });
@@ -81,6 +83,10 @@ export default function NewInvoicePage() {
             </select>
             <Input type="date" label="Due date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
           </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={isExport} onChange={(e) => setIsExport(e.target.checked)} className="accent-[hsl(var(--accent))]" />
+            Export invoice (zero-rated GST with LUT)
+          </label>
         </Card>
 
         <Card padding="md" className="space-y-3">

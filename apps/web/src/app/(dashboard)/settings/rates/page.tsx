@@ -12,6 +12,20 @@ const INTERVALS = [
 
 export default function RateSettingsPage() {
   const [interval, setInterval] = useState(60);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await fetch('/api/trpc/settings.set', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'rateSyncIntervalMin', value: interval }),
+      });
+    } catch { /* ignore */ }
+    setSaving(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -35,7 +49,9 @@ export default function RateSettingsPage() {
             </label>
           ))}
         </div>
-        <Button size="sm" className="mt-4">Save</Button>
+        <Button size="sm" className="mt-4" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : 'Save'}
+        </Button>
       </Card>
 
       <Card padding="md" className="max-w-lg">

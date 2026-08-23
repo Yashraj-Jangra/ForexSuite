@@ -7,9 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
 
 type Firc = { id: string; fircNumber: string; issuingBank: string; amount: string; currency: string; unmappedAmountInr: string; dateOfIssuance: string };
+type Invoice = { id: string; invoiceNumber: string; total: string; currency: string; status: string };
 
 export default function FircPage() {
   const [fircs, setFircs] = useState<Firc[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [linkingFircId, setLinkingFircId] = useState<string | null>(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
+  const [linkAmount, setLinkAmount] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [fircNumber, setFircNumber] = useState('');
   const [issuingBank, setIssuingBank] = useState('');
@@ -19,9 +24,14 @@ export default function FircPage() {
 
   async function load() {
     try {
-      const res = await fetch('/api/trpc/fircs.list', { credentials: 'include' });
-      const json = await res.json();
-      setFircs(json?.result?.data?.data || []);
+      const [fRes, iRes] = await Promise.all([
+        fetch('/api/trpc/fircs.list', { credentials: 'include' }),
+        fetch('/api/trpc/invoices.list', { credentials: 'include' }),
+      ]);
+      const fJson = await fRes.json();
+      const iJson = await iRes.json();
+      setFircs(fJson?.result?.data?.data || []);
+      setInvoices(iJson?.result?.data?.data || []);
     } catch { /* ignore */ }
   }
 
@@ -36,6 +46,19 @@ export default function FircPage() {
       body: JSON.stringify({ fircNumber, issuingBank, amount: Number(amount), currency, dateOfIssuance }),
     });
     setFircNumber(''); setIssuingBank(''); setAmount(''); setCurrency('USD'); setDateOfIssuance(''); setShowForm(false);
+    load();
+  }
+
+  async function handleLink(fircId: string) {
+    await fetch('/api/trpc/fircs.linkInvoice', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fircId, invoiceId: selectedInvoiceId, amount: Number(linkAmount) }),
+    });
+    setLinkingFircId(null);
+    setSelectedInvoiceId('');
+    setLinkAmount('');
     load();
   }
 
@@ -79,6 +102,37 @@ export default function FircPage() {
             <p className="text-xs text-muted-foreground mt-2">
               Unmapped: {Number(f.unmappedAmountInr ?? f.amount).toLocaleString()} · Issued: {f.dateOfIssuance}
             </p>
+            {Number(f.unmappedAmountInr ?? f.amount) > 0 && (
+              <div className="mt-3">
+                {linkingFircId === f.id ? (
+                  <div className="space-y-2 border border-border rounded-lg p-3 bg-muted/30">
+                    <select
+                      value={selectedInvoiceId}
+                      onChange={(e) => setSelectedInvoiceId(e.target.value)}
+                      className="w-full h-9 px-2 rounded border border-input bg-background text-sm"
+                    >
+                      <option value="">Select invoice...</option>
+                      {invoices.map((inv) => (
+                        <option key={inv.id} value={inv.id}>{inv.invoiceNumber} — {inv.currency} {Number(inv.total).toLocaleString()} ({inv.status})</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="Amount to match"
+                      value={linkAmount}
+                      onChange={(e) => setLinkAmount(e.target.value)}
+                      className="w-full h-9 px-2 rounded border border-input bg-background text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleLink(f.id)} disabled={!selectedInvoiceId || !linkAmount}>Confirm</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setLinkingFircId(null); setSelectedInvoiceId(''); setLinkAmount(''); }}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => setLinkingFircId(f.id)}>Link to invoice</Button>
+                )}
+              </div>
+            )}
           </Card>
         ))}
         {fircs.length === 0 && (

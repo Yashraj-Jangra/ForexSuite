@@ -25,6 +25,7 @@ export default function LrsPage() {
   const [currency, setCurrency] = useState('USD');
   const [exchangeRate, setExchangeRate] = useState('');
   const [tcsCategory, setTcsCategory] = useState('other');
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -48,7 +49,7 @@ export default function LrsPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    await fetch('/api/trpc/remittances.create', {
+    const res = await fetch('/api/trpc/remittances.create', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -57,6 +58,9 @@ export default function LrsPage() {
         exchangeRate: Number(exchangeRate), tcsCategory,
       }),
     });
+    const json = await res.json();
+    const data = json?.result?.data;
+    setCreatedId(data?.id ?? 'created');
     setShowForm(false);
     setRemitterName(''); setRemitterPan(''); setBeneficiaryName(''); setBeneficiaryCountry('US');
     setPurposeCode(''); setAmountForeign(''); setCurrency('USD'); setExchangeRate(''); setTcsCategory('other');
@@ -107,6 +111,14 @@ export default function LrsPage() {
             </select>
             <Button type="submit" size="sm">Create remittance</Button>
           </form>
+        </Card>
+      )}
+
+      {createdId && (
+        <Card padding="md" className="mb-6 max-w-lg">
+          <p className="text-sm text-green-400">Remittance created successfully.</p>
+          <p className="text-sm text-muted-foreground mt-1">Coming soon — Download Form A2 PDF.</p>
+          {/* TODO: Wire Form A2 generation — call GET /api/trpc/remittances.formA2?id=<createdId> and download PDF */}
         </Card>
       )}
 

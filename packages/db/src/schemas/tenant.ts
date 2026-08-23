@@ -183,3 +183,11 @@ export const forexTransactions = pgTable('forex_transactions', {
 }, (table) => ({
   transactionDateIdx: index('forex_transactions_date_idx').on(table.transactionDate),
 }));
+
+export const settings = pgTable('settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  key: text('key').notNull(),
+  value: text('value').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

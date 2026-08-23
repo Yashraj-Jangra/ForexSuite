@@ -7,6 +7,20 @@ import { Button } from '@/components/ui/button';
 export default function ComplianceSettingsPage() {
   const [exporter, setExporter] = useState(true);
   const [moneyChanger, setMoneyChanger] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await fetch('/api/trpc/settings.set', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'compliance', value: { exporter, moneyChanger } }),
+      });
+    } catch { /* ignore */ }
+    setSaving(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -40,7 +54,9 @@ export default function ComplianceSettingsPage() {
           </button>
         </Card>
 
-        <Button size="sm" className="w-fit">Save settings</Button>
+        <Button size="sm" className="w-fit" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : 'Save settings'}
+        </Button>
       </div>
     </div>
   );
