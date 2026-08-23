@@ -4,6 +4,7 @@ import { remittances, rbiPurposeCodes } from '@vaultbill/db/schemas/tenant';
 import { eq, desc, sql } from 'drizzle-orm';
 import { calculateTcs } from '@vaultbill/shared';
 import { LRS_ANNUAL_LIMIT_USD, seedPurposeCodes } from '@vaultbill/config';
+import { generatePdf, renderFormA2Html } from '@vaultbill/pdf';
 
 export const remittanceRouter = router({
   list: protectedProcedure.query(({ ctx }) =>
@@ -80,10 +81,49 @@ export const remittanceRouter = router({
           tcsAmount: String(tcs.tcsAmount),
           panFinancialYearRemitted: String(newCumulative),
           status: 'completed',
-        }).returning() as any;
-        const rows = result ?? [];
-        if (!rows[0]) throw new Error('Failed to create remittance');
-        return rows[0];
+        }).returning();
+
+        if (!result) throw new Error('Failed to create remittance');
+        return result;
       });
+    }),
+
+  formA2: protectedProcedure
+    .input(z.string().uuid())
+    .query(async ({ ctx, input }) => {
+      const [remittance] = await ctx.db
+        .select()
+        .from(remittances)
+        .where(eq(remittances.id, input))
+        .limit(1);
+
+      if (!remittance) throw new Error('Remittance not found');
+
+      const netDebit = (Number(remittance.amountInr ?? 0) + Number(remittance.tcsAmount ?? 0)).toFixed(2);
+      const html = renderFormA2Html({
+        remitterName: remittance.remitterName,
+        remitterPan: remittance.remitterPan,
+        remitterAadhaar: remittance.remitterAadhaar ?? 'N/A',
+        remitterAccount: remittance.remitterAccount ?? 'N/A',
+        beneficiaryName: remittance.beneficiaryName,
+        beneficiaryBankDetails: remittance.beneficiaryBankDetails ?? 'N/A',
+        beneficiaryCountry: remittance.beneficiaryCountry,
+        purposeCode: remittance.purposeCode,
+        purposeDescription: remittance.purposeDescription ?? 'Outward Remittance',
+        amountForeign: remittance.amountForeign,
+        currency: remittance.currency,
+        exchangeRate: remittance.exchangeRate ?? '1',
+        amountInr: remittance.amountInr ?? '0',
+        tcsPercentage: remittance.tcsPercentage ?? '0',
+        tcsAmount: remittance.tcsAmount ?? '0',
+        netDebit,
+        date: new Date().toLocaleDateString(),
+      });
+
+      const pdf = await generatePdf(html);
+      return {
+        pdf: pdf.toString('base64'),
+        filename: `Form_A2_${remittance.remitterPan}_${remittance.id.slice(0, 8)}.pdf`,
+      };
     }),
 });

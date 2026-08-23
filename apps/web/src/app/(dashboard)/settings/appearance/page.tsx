@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useTheme } from '@/providers/ThemeProvider';
 import { ACCENT_PRESETS, RADIUS_PRESETS, type AccentId, type RadiusId, type ThemeMode } from '@/design-system';
 import { Container } from '@/components/ui/container';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Moon, Sun, Monitor, Check } from 'lucide-react';
+import { Moon, Sun, Monitor, Check, ArrowLeft } from 'lucide-react';
 
 const MODE_OPTIONS: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -20,93 +21,97 @@ export default function AppearancePage() {
 
   const flashSaved = () => {
     setSaved(true);
-    setTimeout(() => setSaved(false), 1200);
+    setTimeout(() => setSaved(false), 1400);
   };
 
   return (
-    <Container size="sm" className="py-16">
-      <a href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 inline-block">
-        &larr; Back home
-      </a>
-      <h1 className="mb-1">Appearance</h1>
-      <p className="text-muted-foreground mb-10">Customize how VaultBill looks and feels.</p>
+    <Container size="sm" className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Link href="/settings" className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="size-4" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold">Appearance</h1>
+          <p className="text-sm text-muted-foreground">Customize how VaultBill looks and feels on this device.</p>
+        </div>
+      </div>
 
       {/* Theme mode */}
-      <Card padding="lg" className="mb-6">
-        <h3 className="mb-4">Theme</h3>
-        <section className="grid grid-cols-3 gap-3">
+      <Card padding="md">
+        <h3 className="text-sm font-semibold mb-3">Theme</h3>
+        <div className="grid grid-cols-3 gap-3">
           {MODE_OPTIONS.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
               onClick={() => { setMode(value); flashSaved(); }}
               className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border border-border transition-all duration-200',
+                'flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200',
                 mode === value
-                  ? 'bg-accent-soft border-accent/40 text-accent-soft-foreground'
-                  : 'hover:bg-muted text-muted-foreground',
+                  ? 'bg-accent/10 border-accent text-accent font-medium shadow-sm'
+                  : 'border-border/60 hover:bg-muted/50 text-muted-foreground hover:text-foreground',
               )}
             >
               <Icon className="size-5" />
-              <span className="text-sm font-medium">{label}</span>
+              <span className="text-sm">{label}</span>
             </button>
           ))}
-        </section>
+        </div>
       </Card>
 
       {/* Accent color */}
-      <Card padding="lg" className="mb-6">
-        <h3 className="mb-4">Accent color</h3>
-        <section className="flex flex-wrap gap-3">
+      <Card padding="md">
+        <h3 className="text-sm font-semibold mb-3">Accent color</h3>
+        <div className="flex flex-wrap gap-2.5">
           {ACCENT_PRESETS.map((preset) => (
             <button
               key={preset.id}
               onClick={() => { setAccent(preset.id as AccentId); flashSaved(); }}
               className={cn(
-                'flex items-center gap-2.5 px-4 py-2.5 rounded-full border border-border transition-all duration-200',
+                'flex items-center gap-2 px-3.5 py-2 rounded-full border transition-all duration-200',
                 accent === preset.id
-                  ? 'bg-accent-soft border-accent/40'
-                  : 'hover:bg-muted',
+                  ? 'bg-accent/10 border-accent font-medium shadow-sm'
+                  : 'border-border/60 hover:bg-muted/50',
               )}
             >
               <span
-                className="size-5 rounded-full border-2 border-transparent ring-1 ring-border/50 shrink-0"
+                className="size-4 rounded-full ring-1 ring-border/50 shrink-0"
                 style={{ background: `hsl(${preset.hsl})` }}
               />
-              <span className="text-sm font-medium">{preset.name}</span>
+              <span className="text-sm">{preset.name}</span>
               {accent === preset.id && <Check className="size-3.5 text-accent ml-0.5" />}
             </button>
           ))}
-        </section>
+        </div>
       </Card>
 
       {/* Border radius */}
-      <Card padding="lg" className="mb-6">
-        <h3 className="mb-4">Border radius</h3>
-        <section className="flex flex-wrap gap-3">
+      <Card padding="md">
+        <h3 className="text-sm font-semibold mb-3">Border radius</h3>
+        <div className="flex flex-wrap gap-2.5">
           {RADIUS_PRESETS.map((preset) => (
             <button
               key={preset.id}
               onClick={() => { setRadius(preset.id as RadiusId); flashSaved(); }}
               className={cn(
-                'px-4 py-2.5 rounded-full border border-border text-sm font-medium transition-all duration-200',
+                'px-4 py-2 rounded-lg border text-sm transition-all duration-200',
                 radius === preset.id
-                  ? 'bg-accent-soft border-accent/40 text-accent-soft-foreground'
-                  : 'hover:bg-muted text-muted-foreground',
+                  ? 'bg-accent/10 border-accent text-accent font-medium shadow-sm'
+                  : 'border-border/60 hover:bg-muted/50 text-muted-foreground hover:text-foreground',
               )}
             >
               {preset.name}
             </button>
           ))}
-        </section>
+        </div>
       </Card>
 
       {/* Reduced motion */}
-      <Card padding="lg">
-        <section className="flex items-center justify-between">
-          <article>
-            <h4 className="text-base mb-1">Reduced motion</h4>
-            <p className="text-sm text-muted-foreground">Disable animations and transitions.</p>
-          </article>
+      <Card padding="md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-semibold mb-0.5">Reduced motion</h4>
+            <p className="text-xs text-muted-foreground">Minimize high-frequency transitions and dynamic animations.</p>
+          </div>
           <button
             role="switch"
             aria-checked={reducedMotion}
@@ -123,14 +128,15 @@ export default function AppearancePage() {
               )}
             />
           </button>
-        </section>
+        </div>
       </Card>
 
       {/* saved toast */}
       {saved && (
-        <span className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-foreground text-background text-sm font-medium animate-reveal-up z-50">
+        <div className="fixed bottom-6 right-6 px-4 py-2 rounded-full bg-card border border-border text-foreground text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 z-50 flex items-center gap-2">
+          <span className="size-2 rounded-full bg-green-500 inline-block" />
           Preference saved
-        </span>
+        </div>
       )}
     </Container>
   );

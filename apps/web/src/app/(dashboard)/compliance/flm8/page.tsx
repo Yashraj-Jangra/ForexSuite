@@ -5,12 +5,39 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
+import {
+  FileSpreadsheet,
+  Plus,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Calculator,
+  ShieldCheck,
+  Calendar,
+  Layers,
+} from 'lucide-react';
 
 type Statement = {
-  month: string; openingBalance: number; closingBalance: number; totalTransactions: number;
-  purchases: { total: number; byCategory: { category: string; amount: number; count: number }[]; transactions: any[] };
-  sales: { total: number; byCategory: { category: string; amount: number; count: number }[]; transactions: any[] };
-  balanceEquation: { opening: number; purchases: number; sales: number; closing: number; isValid: boolean };
+  month: string;
+  openingBalance: number;
+  closingBalance: number;
+  totalTransactions: number;
+  purchases: {
+    total: number;
+    byCategory: { category: string; amount: number; count: number }[];
+    transactions: any[];
+  };
+  sales: {
+    total: number;
+    byCategory: { category: string; amount: number; count: number }[];
+    transactions: any[];
+  };
+  balanceEquation: {
+    opening: number;
+    purchases: number;
+    sales: number;
+    closing: number;
+    isValid: boolean;
+  };
 };
 
 export default function Flm8Page() {
@@ -21,44 +48,70 @@ export default function Flm8Page() {
   const [showForm, setShowForm] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const [txDate, setTxDate] = useState(now.toISOString().split('T')[0]);
+  const [txDate, setTxDate] = useState(now.toISOString().split('T')[0] || '');
   const [txCurrency, setTxCurrency] = useState('USD');
   const [txType, setTxType] = useState<'purchase' | 'sale'>('purchase');
   const [txCategory, setTxCategory] = useState('public');
   const [txAmount, setTxAmount] = useState('');
   const [txCustomer, setTxCustomer] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   async function loadStatement() {
     try {
-      const res = await fetch(`/api/trpc/forex.statement?input=${encodeURIComponent(JSON.stringify({ year, month }))}`, { credentials: 'include' });
+      const res = await fetch(`/api/trpc/forex.statement?input=${encodeURIComponent(JSON.stringify({ year, month }))}`, {
+        credentials: 'include',
+      });
       const json = await res.json();
       setStatement(json?.result?.data?.data);
     } catch { /* ignore */ }
   }
 
-  useEffect(() => { loadStatement(); }, [year, month]);
+  useEffect(() => {
+    loadStatement();
+  }, [year, month]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    await fetch('/api/trpc/forex.create', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactionDate: txDate, currency: txCurrency, transactionType: txType, category: txCategory, amount: Number(txAmount), customerName: txCustomer || undefined }),
-    });
-    setTxAmount(''); setTxCustomer(''); setShowForm(false);
-    loadStatement();
+    setSubmitting(true);
+    try {
+      await fetch('/api/trpc/forex.create', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionDate: txDate,
+          currency: txCurrency,
+          transactionType: txType,
+          category: txCategory,
+          amount: Number(txAmount),
+          customerName: txCustomer || undefined,
+        }),
+      });
+      setTxAmount('');
+      setTxCustomer('');
+      setShowForm(false);
+      loadStatement();
+    } catch { /* ignore */ }
+    setSubmitting(false);
   }
 
   async function handleExport() {
     setExporting(true);
     try {
-      const res = await fetch(`/api/trpc/forex.exportExcel?input=${encodeURIComponent(JSON.stringify({ year, month }))}`, { credentials: 'include' });
+      const res = await fetch(`/api/trpc/forex.exportExcel?input=${encodeURIComponent(JSON.stringify({ year, month }))}`, {
+        credentials: 'include',
+      });
       const json = await res.json();
       const data = json?.result?.data?.data;
       if (data?.data) {
         const blob = new Uint8Array(atob(data.data).split('').map((c) => c.charCodeAt(0)));
-        const url = URL.createObjectURL(new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-        const a = document.createElement('a'); a.href = url; a.download = data.filename; a.click();
+        const url = URL.createObjectURL(
+          new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+        );
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = data.filename || `FLM8_${year}_${month}.xlsx`;
+        a.click();
         URL.revokeObjectURL(url);
       }
     } catch { /* ignore */ }
@@ -66,103 +119,289 @@ export default function Flm8Page() {
   }
 
   const purchaseCats = txType === 'purchase' ? ['public', 'franchisee', 'ffmc_ad'] : ['btq', 'business', 'ffmc_ad'];
-  const allCats = ['btq', 'business', 'ffmc_ad', 'public', 'franchisee'];
-  if (!allCats.includes(txCategory)) setTxCategory(purchaseCats[0] ?? 'public');
 
   return (
-    <Container>
-      <div className="flex items-center justify-between mb-6">
+    <Container className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">FLM-8 Monthly Statement</h1>
-          <p className="text-sm text-muted-foreground">RBI monthly return for money changers</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">FLM-8 Monthly Statement</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            RBI Monthly Return of Foreign Currency Transactions and Stock Reconciliation for FFMC / AD-II entities.
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setShowForm(!showForm)}>Add transaction</Button>
-          <Button size="sm" onClick={handleExport} disabled={exporting}>{exporting ? 'Exporting...' : 'Export Excel'}</Button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowForm(!showForm)} className="gap-1.5 text-xs">
+            <Plus className="size-3.5" />
+            <span>Add Transaction</span>
+          </Button>
+          <Button size="sm" onClick={handleExport} disabled={exporting} className="gap-1.5 text-xs shadow-sm bg-green-600 hover:bg-green-700 text-white">
+            <FileSpreadsheet className="size-3.5" />
+            <span>{exporting ? 'Generating Excel...' : 'Export Excel (.xlsx)'}</span>
+          </Button>
         </div>
       </div>
 
-      <div className="flex gap-3 items-center mb-6">
-        <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="w-28 h-10 px-3 rounded-lg border border-input bg-background text-sm">
-          {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => <option key={y} value={y}>{y}</option>)}
+      {/* Period Selector */}
+      <Card padding="sm" className="flex items-center gap-3">
+        <Calendar className="size-4 text-accent ml-2" />
+        <span className="text-xs font-semibold text-muted-foreground">Reporting Period:</span>
+        <select
+          value={month}
+          onChange={(e) => setMonth(Number(e.target.value))}
+          className="h-8 px-2 rounded-lg border border-input bg-background text-xs font-medium"
+        >
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+            <option key={m} value={m}>
+              {new Date(2000, m - 1, 1).toLocaleString('default', { month: 'long' })}
+            </option>
+          ))}
         </select>
-        <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="w-32 h-10 px-3 rounded-lg border border-input bg-background text-sm">
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => <option key={m} value={m}>{new Date(2000, m - 1, 1).toLocaleString('default', { month: 'long' })}</option>)}
+        <select
+          value={year}
+          onChange={(e) => setYear(Number(e.target.value))}
+          className="h-8 px-2 rounded-lg border border-input bg-background text-xs font-medium font-mono"
+        >
+          {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
         </select>
-      </div>
+      </Card>
 
+      {/* Transaction Modal */}
       {showForm && (
-        <Card padding="md" className="mb-6 max-w-lg space-y-3">
-          <h3 className="font-medium">New forex transaction</h3>
-          <form onSubmit={handleCreate} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Date" type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} required />
-              <Input label="Amount" type="number" value={txAmount} onChange={(e) => setTxAmount(e.target.value)} required />
+        <Card padding="lg" className="border-accent/40 bg-card/90 space-y-4 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h3 className="text-base font-bold flex items-center gap-2">
+              <Layers className="size-4 text-accent" />
+              <span>Record Foreign Currency Purchase / Sale</span>
+            </h3>
+            <button onClick={() => setShowForm(false)} className="text-xs text-muted-foreground hover:text-foreground">
+              ✕ Close
+            </button>
+          </div>
+
+          <form onSubmit={handleCreate} className="space-y-4 text-xs">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Input
+                label="Transaction Date *"
+                type="date"
+                value={txDate}
+                onChange={(e) => setTxDate(e.target.value)}
+                required
+              />
+              <Input
+                label="Customer / Entity Name (Optional)"
+                value={txCustomer}
+                onChange={(e) => setTxCustomer(e.target.value)}
+                placeholder="Walk-in Traveler / Corporate"
+              />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <select value={txType} onChange={(e) => { setTxType(e.target.value as any); setTxCategory(e.target.value === 'purchase' ? 'public' : 'btq'); }} className="h-10 mt-6 px-3 rounded-lg border border-input bg-background text-sm">
-                <option value="purchase">Purchase</option><option value="sale">Sale</option>
-              </select>
-              <select value={txCurrency} onChange={(e) => setTxCurrency(e.target.value)} className="h-10 mt-6 px-3 rounded-lg border border-input bg-background text-sm">
-                <option>USD</option><option>EUR</option><option>GBP</option><option>AED</option><option>SAR</option><option>INR</option>
-              </select>
-              <select value={txCategory} onChange={(e) => setTxCategory(e.target.value)} className="h-10 mt-6 px-3 rounded-lg border border-input bg-background text-sm">
-                {purchaseCats.map((c) => <option key={c} value={c}>{c.replace('_', ' ').toUpperCase()}</option>)}
-              </select>
+
+            <div className="grid sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Transaction Type *</label>
+                <select
+                  value={txType}
+                  onChange={(e) => {
+                    const val = e.target.value as any;
+                    setTxType(val);
+                    setTxCategory(val === 'purchase' ? 'public' : 'btq');
+                  }}
+                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm font-semibold"
+                >
+                  <option value="purchase">Purchase (Inward)</option>
+                  <option value="sale">Sale (Outward)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Currency *</label>
+                <select
+                  value={txCurrency}
+                  onChange={(e) => setTxCurrency(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm font-mono font-bold"
+                >
+                  <option>USD</option>
+                  <option>EUR</option>
+                  <option>GBP</option>
+                  <option>AED</option>
+                  <option>SGD</option>
+                  <option>SAR</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground block mb-1">Category (RBI Code) *</label>
+                <select
+                  value={txCategory}
+                  onChange={(e) => setTxCategory(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm capitalize"
+                >
+                  {purchaseCats.map((c) => (
+                    <option key={c} value={c}>
+                      {c.replace('_', ' ').toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <Input label="Customer name (optional)" value={txCustomer} onChange={(e) => setTxCustomer(e.target.value)} />
-            <Button type="submit" size="sm">Add transaction</Button>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Amount (Foreign Currency) *</label>
+              <input
+                type="number"
+                min={1}
+                value={txAmount}
+                onChange={(e) => setTxAmount(e.target.value)}
+                placeholder="2500"
+                required
+                className="w-full sm:w-1/2 h-10 px-3 rounded-lg border border-input bg-background text-sm font-mono font-bold"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={submitting}>
+                {submitting ? 'Saving...' : 'Add Transaction'}
+              </Button>
+            </div>
           </form>
         </Card>
       )}
 
-      {statement && (
+      {/* Statement Visualizer */}
+      {statement ? (
         <div className="space-y-6">
+          {/* Key Metric Tiles */}
           <div className="grid gap-4 sm:grid-cols-4">
-            <Card padding="md"><p className="text-sm text-muted-foreground">Opening</p><p className="text-xl font-bold">{statement.openingBalance}</p></Card>
-            <Card padding="md" className="border-green-400/20"><p className="text-sm text-muted-foreground">Purchases</p><p className="text-xl font-bold text-green-400">{statement.purchases.total.toLocaleString()}</p></Card>
-            <Card padding="md" className="border-red-400/20"><p className="text-sm text-muted-foreground">Sales</p><p className="text-xl font-bold text-red-400">{statement.sales.total.toLocaleString()}</p></Card>
-            <Card padding="md"><p className="text-sm text-muted-foreground">Closing</p><p className="text-xl font-bold">{statement.closingBalance.toLocaleString()}</p></Card>
+            <Card padding="md">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Opening Balance</p>
+              <p className="text-xl font-bold font-mono mt-1">${statement.openingBalance.toLocaleString()}</p>
+            </Card>
+
+            <Card padding="md" className="border-emerald-500/20 bg-emerald-500/5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">Purchases</p>
+                <ArrowDownLeft className="size-4 text-emerald-500" />
+              </div>
+              <p className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">
+                +${statement.purchases.total.toLocaleString()}
+              </p>
+            </Card>
+
+            <Card padding="md" className="border-rose-500/20 bg-rose-500/5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 uppercase">Sales</p>
+                <ArrowUpRight className="size-4 text-rose-500" />
+              </div>
+              <p className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400 mt-1">
+                -${statement.sales.total.toLocaleString()}
+              </p>
+            </Card>
+
+            <Card padding="md">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Closing Balance</p>
+              <p className="text-xl font-bold font-mono text-accent mt-1">${statement.closingBalance.toLocaleString()}</p>
+            </Card>
           </div>
 
-          <Card padding="md">
-            <h3 className="font-medium mb-2">Balance Equation</h3>
-            <p className="text-sm font-mono">
-              Opening ({statement.balanceEquation.opening}) + Purchases ({statement.balanceEquation.purchases}) - Sales ({statement.balanceEquation.sales})
-              <span className="mx-2">=</span>
-              <strong>{statement.balanceEquation.closing}</strong>
-              <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${statement.balanceEquation.isValid ? 'bg-green-400/10 text-green-400' : 'bg-red-400/10 text-red-400'}`}>
-                {statement.balanceEquation.isValid ? '✓ Balanced' : '✗ Mismatch'}
-              </span>
-            </p>
+          {/* Balance Equation Pill */}
+          <Card padding="md" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Calculator className="size-5 text-accent shrink-0" />
+              <div className="text-xs font-mono">
+                <span className="text-muted-foreground">Equation: </span>
+                <span>Opening ({statement.balanceEquation.opening})</span>
+                <span className="text-emerald-600 dark:text-emerald-400"> + Purchases ({statement.balanceEquation.purchases})</span>
+                <span className="text-rose-600 dark:text-rose-400"> - Sales ({statement.balanceEquation.sales})</span>
+                <span> = </span>
+                <strong className="text-foreground">{statement.balanceEquation.closing}</strong>
+              </div>
+            </div>
+
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-bold border inline-flex items-center gap-1 shrink-0 ${
+                statement.balanceEquation.isValid
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+              }`}
+            >
+              {statement.balanceEquation.isValid ? '✓ STATUTORY BALANCE VERIFIED' : '✗ BALANCE MISMATCH'}
+            </span>
           </Card>
 
+          {/* Category Breakdown */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Card padding="md">
-              <h3 className="font-medium mb-3 text-green-400">Purchases ({statement.purchases.transactions.length})</h3>
-              {statement.purchases.byCategory.map((c) => (
-                <div key={c.category} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
-                  <span className="text-muted-foreground">{c.category.replace('_', ' ')}</span>
-                  <span>{c.amount.toLocaleString()} ({c.count})</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-sm font-bold pt-2 mt-1 border-t border-border">{statement.purchases.total.toLocaleString()}</div>
+            {/* Purchases by Category */}
+            <Card padding="md" className="space-y-3">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <ArrowDownLeft className="size-4" />
+                  <span>Purchases by Category ({statement.purchases.transactions.length})</span>
+                </h3>
+                <span className="font-mono text-xs font-bold text-foreground">
+                  ${statement.purchases.total.toLocaleString()}
+                </span>
+              </div>
+
+
+              <div className="space-y-2 text-xs">
+                {statement.purchases.byCategory.map((c) => (
+                  <div key={c.category} className="flex justify-between py-1.5 border-b border-border/40 last:border-0">
+                    <span className="text-muted-foreground uppercase font-medium">{c.category.replace('_', ' ')}</span>
+                    <span className="font-mono font-semibold text-foreground">
+                      ${c.amount.toLocaleString()} ({c.count} txns)
+                    </span>
+                  </div>
+                ))}
+
+                {statement.purchases.byCategory.length === 0 && (
+                  <p className="text-muted-foreground text-center py-6">No purchases logged this period</p>
+                )}
+              </div>
             </Card>
-            <Card padding="md">
-              <h3 className="font-medium mb-3 text-red-400">Sales ({statement.sales.transactions.length})</h3>
-              {statement.sales.byCategory.map((c) => (
-                <div key={c.category} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
-                  <span className="text-muted-foreground">{c.category.replace('_', ' ')}</span>
-                  <span>{c.amount.toLocaleString()} ({c.count})</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-sm font-bold pt-2 mt-1 border-t border-border">{statement.sales.total.toLocaleString()}</div>
+
+            {/* Sales by Category */}
+            <Card padding="md" className="space-y-3">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <h3 className="text-sm font-bold text-red-400 flex items-center gap-1.5">
+                  <ArrowUpRight className="size-4" />
+                  <span>Sales by Category ({statement.sales.transactions.length})</span>
+                </h3>
+                <span className="font-mono text-xs font-bold text-foreground">
+                  ${statement.sales.total.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                {statement.sales.byCategory.map((c) => (
+                  <div key={c.category} className="flex justify-between py-1.5 border-b border-border/40 last:border-0">
+                    <span className="text-muted-foreground uppercase font-medium">{c.category.replace('_', ' ')}</span>
+                    <span className="font-mono font-semibold text-foreground">
+                      ${c.amount.toLocaleString()} ({c.count} txns)
+                    </span>
+                  </div>
+                ))}
+
+                {statement.sales.byCategory.length === 0 && (
+                  <p className="text-muted-foreground text-center py-6">No sales logged this period</p>
+                )}
+              </div>
             </Card>
           </div>
         </div>
+      ) : (
+        <Card padding="lg" className="py-12 text-center text-muted-foreground space-y-2">
+          <Calculator className="size-8 mx-auto animate-pulse" />
+          <p className="text-sm font-semibold">Loading statement data...</p>
+        </Card>
       )}
-
-      {!statement && <p className="text-muted-foreground text-center py-10">Loading...</p>}
     </Container>
   );
-}
+}

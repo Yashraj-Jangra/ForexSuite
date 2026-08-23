@@ -1,226 +1,99 @@
-# VaultBill Design System
+# VaultBill Design System (v2.0)
 
-A minimal, sleek design system built for a multi-currency invoicing platform. Mobile-first, user-experience optimized, with first-class dark mode support.
+A sleek, minimal, and modern fintech design system crafted for multi-currency invoicing, forex management, and statutory regulatory compliance (RBI/FEMA, GST LUT, Form A2, FLM-8).
+
+Designed for real business owners, finance teams, and international founders — not raw developer terminals.
 
 ---
 
-## Color System
+## 1. Color System
 
-All colors are defined as HSL custom properties in `src/design-system/tokens.css`. Tailwind references these via `hsl(var(--token))`.
+All colors use HSL tokens defined in `src/design-system/tokens.css` and exposed via Tailwind CSS semantic classes (`text-foreground`, `bg-card`, `bg-accent`, `border-border`).
 
-### Semantic Tokens
+### Semantic Color Tokens
 
-| Token | Light | Dark | Usage |
+| Token | Light Mode (Clean Slate) | Dark Mode (Midnight Slate) | Role & Usage |
 |---|---|---|---|
-| `--background` | `40 30% 98%` (warm off-white) | `150 15% 4%` (deep green-black) | Page background |
-| `--foreground` | `24 10% 15%` (soft black) | `40 30% 93%` (warm light) | Primary text |
-| `--card` | `0 0% 100%` | `150 12% 7%` | Cards, surfaces |
-| `--primary` | `var(--accent)` | `var(--accent)` | Primary actions, links |
-| `--secondary` | `40 20% 94%` | `150 10% 12%` | Secondary surfaces |
-| `--muted` | `40 20% 94%` | `150 10% 12%` | Muted backgrounds |
-| `--muted-foreground` | `30 8% 42%` | `150 8% 62%` | Secondary text |
-| `--border` | `30 8% 88%` | `150 10% 15%` | Borders, dividers |
-| `--destructive` | `0 72% 51%` | `0 62% 45%` | Errors, delete actions |
-| `--success` | `142 40% 45%` | `142 40% 45%` | Success states |
-| `--warning` | `36 100% 50%` | `36 100% 48%` | Warnings |
+| `--background` | `210 40% 98%` (soft slate white) | `222 47% 11%` (rich charcoal slate) | Main viewport canvas |
+| `--foreground` | `222 47% 11%` (deep high-contrast slate) | `210 40% 98%` (crisp white) | Primary typography |
+| `--card` | `0 0% 100%` (pure white) | `217 33% 15%` (elevated surface) | Cards, panels, tables |
+| `--card-foreground`| `222 47% 11%` | `210 40% 98%` | Text on card surfaces |
+| `--primary` / `--accent` | `221 83% 53%` (Royal Indigo) | `217 91% 60%` (Electric Indigo) | Primary buttons, active tabs |
+| `--secondary` | `210 40% 96%` | `217 33% 18%` | Secondary button fills |
+| `--muted` | `210 40% 96%` | `217 33% 18%` | Subdued surface backgrounds |
+| `--muted-foreground` | `215 16% 47%` (balanced slate) | `215 20% 65%` (neutral slate) | Captions, hints, subtitles |
+| `--border` | `214 32% 91%` (crisp subtle line) | `217 33% 22%` (clean divider) | 1px dividers, card outlines |
+| `--destructive` | `0 84% 60%` (Rose Red) | `0 72% 51%` | Overdue, errors, deletion |
+| `--success` | `142 71% 45%` (Emerald) | `142 60% 45%` | Paid status, balanced statement |
+| `--warning` | `38 92% 50%` (Amber Gold) | `38 92% 50%` | FEMA realization warnings |
 
 ### Accent Presets
 
-Users can pick from 6 accent colors via `data-accent` attribute on `<html>`:
+Users can customize the workspace accent in **Settings → Appearance**:
 
-| ID | Name | Light HSL | Dark HSL |
-|---|---|---|---|
-| `sage` | Sage (default) | `155 40% 35%` | `155 50% 48%` |
-| `mint` | Mint | `160 55% 40%` | `160 50% 50%` |
-| `teal` | Teal | `175 50% 38%` | `175 45% 48%` |
-| `olive` | Olive | `65 30% 35%` | `65 30% 47%` |
-| `forest` | Forest | `145 35% 28%` | `145 38% 40%` |
-| `emerald` | Emerald | `150 50% 42%` | `150 45% 52%` |
-
-### Contrast Ratios (WCAG AA)
-
-- Foreground on Background: **4.8:1** (light), **5.2:1** (dark) — passes AA for normal text
-- Primary on Background: **4.2:1** (light), **4.5:1** (dark) — passes AA for large text
-
----
-
-## Typography
-
-| Role | Font | Weight | Size | Tracking |
+| ID | Preset Name | Light HSL | Dark HSL | Style Character |
 |---|---|---|---|---|
-| Headings | `Inter` | 600 (semibold) | `3rem`–`4.5rem` | `-0.025em` |
-| Body | `Inter` | 400 | `1rem` | normal |
-| Accent/cursive | `Caveat`, `Reenie Beanie` | 400 | variable | normal |
-| Small/captions | `Inter` | 400–500 | `0.75rem`–`0.875rem` | normal |
-
-### Scale
-
-`text-2xs` → `text-xs` → `text-sm` → `text-base` → `text-lg` → `text-xl` → `text-2xl` → `text-3xl` → `text-4xl` → `text-5xl` → `text-6xl` → `text-7xl`
-
-**Rule**: Use sentence case for all headings. No all-caps. No title case.
+| `indigo` *(Default)* | Royal Indigo | `221 83% 53%` | `217 91% 60%` | Modern SaaS, Linear-inspired |
+| `blue` | Ocean Blue | `212 100% 48%` | `212 100% 60%` | Trustworthy, corporate fintech |
+| `violet` | Modern Violet | `262 83% 58%` | `263 70% 66%` | Premium, elegant |
+| `emerald` | Emerald | `160 84% 39%` | `158 64% 52%` | Wealth, currency, growth |
+| `rose` | Rose | `346 87% 53%` | `349 89% 62%` | Dynamic, bold |
+| `amber` | Amber | `38 92% 50%` | `43 96% 56%` | Warm, gold, high-visibility |
 
 ---
 
-## Spacing & Layout
+## 2. Typography
 
-- Base unit: **4px** (Tailwind default)
-- Section vertical padding: `py-20` (80px)
-- Container max widths: `sm` (3xl/768px), `md` (5xl/1024px), `lg` (6xl/1152px), `xl` (7xl/1280px)
-- Card padding: `sm` (16px), `md` (24px), `lg` (32-40px)
-- Mobile-first: all layouts start single-column, expand at `sm:` (640px) or `md:` (768px)
+We use **Plus Jakarta Sans** as our primary interface font for clean, friendly geometric legibility, paired with **JetBrains Mono** for monetary amounts, invoice numbers, SWIFT codes, and PANs.
 
----
+### Hierarchy & Scale
 
-## Border Radius
-
-Configurable via `data-radius` attribute:
-
-| Preset | `--radius` | `--radius-sm` | `--radius-md` | `--radius-lg` |
-|---|---|---|---|---|
-| `sharp` | `0.375rem` | `0.25rem` | `0.375rem` | `0.5rem` |
-| `rounded` (default) | `1rem` | `0.5rem` | `0.75rem` | `1.25rem` |
-| `pill` | `2rem` | `1rem` | `1.5rem` | `2rem` |
-
-Buttons always use `rounded-full` regardless of radius setting.
+| Level | Size | Weight | Line Height | Tracking | Usage |
+|---|---|---|---|---|---|
+| **Display / H1** | `24px` – `30px` (`text-2xl` / `text-3xl`) | `700` (Bold) | `1.2` | `-0.025em` | Page main headers |
+| **Section / H2** | `18px` – `20px` (`text-lg` / `text-xl`) | `700` (Bold) | `1.3` | `-0.02em` | Card groups, major panels |
+| **Subsection / H3** | `14px` – `16px` (`text-sm` / `text-base`) | `600` (Semibold) | `1.4` | `-0.01em` | Form section headings, modal titles |
+| **Body (Regular)** | `13px` – `14px` (`text-xs` / `text-sm`) | `400` / `500` | `1.5` | `normal` | Descriptions, body copy |
+| **Subtext / Captions** | `11px` – `12px` (`text-[11px]` / `text-xs`) | `500` / `600` | `1.4` | `normal` | Helper hints, dates, metadata |
+| **Numbers / Currency** | `12px` – `24px` | `700` (`font-mono`) | `1.2` | `tight` | Monetary values, forex rates, IDs |
 
 ---
 
-## Shadows
+## 3. UI/UX Principles: "Less Div, Sleek & Focused"
 
-| Token | Value |
-|---|---|
-| `--shadow-sm` | `0 1px 3px 0 rgb(0 0 0 / 0.04)` |
-| `--shadow-md` | `0 4px 20px -2px rgb(0 0 0 / 0.05)` |
-| `--shadow-lg` | `0 12px 40px -8px rgb(0 0 0 / 0.08)` |
-| `--shadow-xl` | `0 20px 60px -12px rgb(0 0 0 / 0.10)` |
-
-Dark mode shadows use higher opacity (0.3–0.5) to remain visible against dark backgrounds.
+1. **Flat Hierarchy**: Avoid deeply nested card-in-card containers. Use single-level clean cards with subtle `border border-border` and generous internal padding (`p-4` to `p-6`).
+2. **High Information Density with Visual Breathing Room**: Clean grid arrangements (`grid gap-4 sm:grid-cols-2 lg:grid-cols-4`) so users can scan financial metrics in milliseconds.
+3. **No Terminal Gimmicks**: Avoid pitch-black backgrounds, neon terminal text, or heavy noise grain overlays. Maintain warm, professional contrast suitable for everyday business workflows.
+4. **Instant Actionability**: Primary actions ("New Invoice", "Download Form A2 PDF", "Sync Rates Now") are always prominent with clear icons and immediate visual feedback.
+5. **Multi-Currency Clarity**: Every currency amount displays both currency code and properly formatted commas (e.g. `USD 15,000` / `₹1,298,400`).
 
 ---
 
-## Animations
+## 4. Elevation & Radius
 
-| Name | Duration | Easing | Usage |
-|---|---|---|---|
-| `reveal-up` | 0.8s | ease-out | Scroll-reveal content |
-| `reveal-down` | 0.6s | ease-out | Drop-in elements (nav, modals) |
-| `float` | 6s | ease-in-out | Background blobs (translateY ±10px) |
-| `float-slow` | 10s | ease-in-out | Large background elements (+scale) |
-| `pulse-soft` | 4s | ease-in-out | Breathing UI elements |
-| `grain` | 8s | steps(10) | Grain texture animation |
-
-**Rules**:
-- Transitions on colors/opacity/shadow: `duration-200` to `duration-300`
-- No animation exceeds 800ms for interactive elements
-- Respect `prefers-reduced-motion`: all animations become 0.01ms
-- User can toggle reduced motion in `/settings/appearance`
+| Preset | `--radius` | Usage |
+|---|---|---|
+| `sharp` | `0.375rem` (6px) | Dense data / compact tabular views |
+| `rounded` *(Default)* | `0.875rem` (14px) | Standard cards, dialogs, buttons |
+| `pill` | `1.5rem` (24px) | Soft organic UI elements |
 
 ---
 
-## Semantic HTML First
-
-Prefer semantic elements over `<div>`:
-
-| Instead of `<div>` | Use |
-|---|---|
-| Page wrapper | `<main>` |
-| Navigation | `<nav>` |
-| Content grouping | `<section>` |
-| Self-contained unit | `<article>` |
-| Sidebar | `<aside>` |
-| Page header | `<header>` |
-| Page footer | `<footer>` |
-| Form group | `<fieldset>` |
-| Text paragraph | `<p>` |
-| Label | `<label>` |
-
-The `<Container>` component accepts an `as` prop to render any semantic element. The `<Card>` component defaults to `<article>`.
-
----
-
-## Component Conventions
-
-1. **Composition over configuration**: Every component accepts `className` for Tailwind overrides.
-2. **Use `cn()`** from `@/lib/utils` to merge classes, never manual string concatenation.
-3. **`forwardRef`** on all interactive components for accessibility (focus management, react-hook-form).
-4. **No hardcoded colors**: Use Tailwind semantic tokens (`text-foreground`, `bg-card`, `text-muted-foreground`, etc.) — never raw hex/HSL values in components.
-5. **Variant via props, not CSS classes**: Use discriminated union props (e.g., `variant="outline"`) mapped to Tailwind classes internally.
-
----
-
-## Illustration Usage
-
-Illustrations live in `public/illustrations/`. The `<Illustration>` component references them by name via `src/illustrations/index.ts`.
-
-```tsx
-import { Illustration } from '@/components/ui/illustration';
-
-<Illustration name="hero" alt="" className="max-w-sm" />
-```
-
-**Rules**:
-- Each page/section should use a different illustration name
-- Always provide `alt=""` for decorative illustrations (empty string, not missing)
-- Illustrations are `pointer-events: none` and `select-none` by default
-- If an illustration file is missing, the `<img>` automatically hides (no broken image)
-
-### Available Illustration Names
-
-`hero`, `dashboard`, `invoices`, `compliance`, `security`, `currency`, `empty`, `error`, `success`, `team`, `growth`, `shield`, `globe`, `chart`, `onboarding`, `notification`
-
----
-
-## Grain Overlay
-
-A fixed-position SVG noise overlay gives the UI a paper-like, analog feel. It uses `feTurbulence` with `baseFrequency="0.65"`, mixed via `mix-blend-mode: overlay` at 35% opacity.
-
-- **z-index**: 9999
-- **pointer-events**: none (doesn't block interaction)
-- **Rendered once** in the root layout, not per page
-- Can be disabled globally by removing the `<span className="grain-overlay" />` element (future setting)
-
----
-
-## Theme Persistence
-
-Theme preferences are stored in `localStorage` under `vaultbill-theme` and applied immediately via an inline `<script>` in `<ThemeProvider>` to prevent FOUC (flash of unstyled content).
-
-- **Mode**: `light` | `dark` | `system`
-- **Accent**: one of the 6 preset IDs
-- **Radius**: one of the 3 preset IDs
-- **Reduced motion**: boolean
-
-The `data-*` attributes on `<html>` enable pure CSS overrides without JavaScript class manipulation per element.
-
----
-
-## File Map
+## 5. File Map
 
 ```
 apps/web/src/
 ├── design-system/
-│   ├── tokens.css          # All CSS custom properties (light + dark + accent presets)
-│   ├── types.ts            # ThemeConfig type, ACCENT_PRESETS, RADIUS_PRESETS
-│   └── index.ts            # Barrel exports
+│   ├── tokens.css          # Core HSL custom properties (light + dark + 6 accent presets)
+│   ├── types.ts            # ThemeConfig, ACCENT_PRESETS, RADIUS_PRESETS
+│   └── index.ts            # Exports
 ├── providers/
-│   └── ThemeProvider.tsx    # React context + localStorage + system preference sync
-├── components/ui/
-│   ├── button.tsx           # Primary/secondary/outline/ghost/destructive/link
-│   ├── card.tsx             # Semantic card with hover variant
-│   ├── input.tsx            # Accessible input with label, hint, error, icons
-│   ├── illustration.tsx     # Named illustration loader with fallback
-│   ├── badge.tsx            # Status and label badges
-│   ├── divider.tsx          # Horizontal rule with optional label
-│   ├── container.tsx        # Responsive max-width container
-│   └── logo.tsx             # VaultBill SVG logo
-├── illustrations/
-│   └── index.ts             # Illustration name → file path mapping
-├── app/
-│   ├── globals.css          # Tailwind directives + animations + grain + base resets
-│   ├── layout.tsx           # Root layout (ThemeProvider + grain overlay)
-│   ├── page.tsx             # Landing page
-│   └── settings/appearance/
-│       └── page.tsx         # Theme customization UI
-└── lib/
-    └── utils.ts             # cn() + formatHSL()
+│   └── ThemeProvider.tsx    # React theme context & localStorage persistence
+├── components/
+│   ├── Sidebar.tsx          # Minimal sleek sidebar navigation
+│   └── ui/                  # Button, Card, Input, Container, Logo, etc.
+└── app/
+    ├── globals.css          # Base resets, Plus Jakarta Sans font, clean scrollbar
+    ├── layout.tsx           # Clean root layout with theme initialization
+    └── (dashboard)/         # Clean dashboard, invoices, compliance, and settings pages
 ```

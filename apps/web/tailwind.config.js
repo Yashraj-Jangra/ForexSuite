@@ -56,9 +56,10 @@ module.exports = {
         full: 'var(--radius-full)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        accent: ['Caveat', 'Reenie Beanie', 'cursive'],
+        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
+
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '0.875rem' }],
         xs: ['0.75rem', { lineHeight: '1rem' }],
