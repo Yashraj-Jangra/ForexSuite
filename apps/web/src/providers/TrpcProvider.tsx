@@ -9,7 +9,14 @@ const trpcClient = createTRPCClient<any>({
     httpBatchLink({
       url: (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')) + '/api/trpc',
       fetch(url, opts) {
-        return fetch(url, { ...opts, credentials: 'include' });
+        const headers = new Headers(opts?.headers);
+        if (typeof window !== 'undefined') {
+          const impersonateTenantId = localStorage.getItem('vaultbill_impersonate_tenant');
+          if (impersonateTenantId) {
+            headers.set('x-impersonate-tenant-id', impersonateTenantId);
+          }
+        }
+        return fetch(url, { ...opts, headers, credentials: 'include' });
       },
     }),
   ],
