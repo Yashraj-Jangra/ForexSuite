@@ -35,6 +35,7 @@
 - Commit: `✨ add personal account management, details telemetry, and session manager`
 - Commit: `🐛 fix account details fetching, profile update, and trpc client binding`
 - Commit: `🎨 redesign profile settings with widescreen side-by-side pdf studio and fix modal scroll`
+- Commit: `🗄️ align tenant_members.tenant_id to uuid foreign key`
 
 ---
 
