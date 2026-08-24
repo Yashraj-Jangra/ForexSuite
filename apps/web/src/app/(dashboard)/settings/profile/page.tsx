@@ -15,9 +15,11 @@ import {
   RefreshCw,
   Check,
   Maximize2,
-  Minimize2,
   Sparkles,
-  ExternalLink,
+  FileText,
+  ShieldCheck,
+  Hash,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 const INVOICE_FORMAT_PRESETS = [
@@ -40,7 +42,7 @@ const TEMPLATES: {
     id: 'modern',
     name: 'Modern Minimalist',
     badge: 'Recommended',
-    description: 'Clean fintech aesthetic, soft borders, subtle pill badges, right-aligned summary.',
+    description: 'Clean fintech aesthetic, soft borders, subtle pill badges, right-aligned summary card.',
     style: 'Modern & Clean',
     badgeColor: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   },
@@ -306,29 +308,31 @@ export default function BusinessProfilePage() {
     setSaving(false);
   }
 
+  const activeTemplate = TEMPLATES.find((t) => t.id === profile.invoiceTemplate) || TEMPLATES[0]!;
+
   return (
-    <div className="space-y-8 max-w-5xl pb-16">
+    <div className="w-full max-w-[1600px] mx-auto space-y-8 pb-16 px-2 sm:px-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-5">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
             <Building2 className="size-6 text-accent" />
             Company &amp; Invoice Customization
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Configure RBI/FFMC regulatory credentials, select your PDF invoice template, and customize GST rules.
+          <p className="text-sm text-muted-foreground mt-1">
+            Configure RBI/FFMC regulatory credentials, select your PDF invoice template with live side-by-side preview, and customize GST rules.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             onClick={() => setFullscreenPreview(true)}
-            className="gap-1.5 shrink-0"
+            className="gap-2 shrink-0"
           >
             <Maximize2 className="size-4 text-accent" />
             <span>Full-Screen Preview</span>
           </Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-2 shrink-0">
+          <Button onClick={handleSave} disabled={saving} className="gap-2 shrink-0 px-5">
             {saved ? (
               <>
                 <CheckCircle2 className="size-4 text-emerald-400" />
@@ -341,359 +345,441 @@ export default function BusinessProfilePage() {
         </div>
       </div>
 
-      {/* ─── SECTION 1: PDF INVOICE TEMPLATE & LIVE SPLIT PREVIEW ─── */}
-      <Card padding="lg" className="border-accent/40 bg-accent/5 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Palette className="size-5 text-accent" />
-            <h2 className="text-base font-bold text-foreground">Invoice PDF Design &amp; Template</h2>
+      {/* ─── SECTION 1: SIDE-BY-SIDE PDF TEMPLATE SELECTOR & REAL-TIME PREVIEW ─── */}
+      <Card padding="lg" className="border-accent/30 bg-accent/[0.02] shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-border/60 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-accent/10 text-accent">
+              <Palette className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">Invoice PDF Design &amp; Live Studio</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Switch templates or accent colors below to view instant, real-time rendering of your Cash Memos.
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent/10 text-accent">
-            5 Professional Layouts
+          <span className="hidden sm:inline-flex text-xs font-semibold px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/20">
+            5 Regulatory Layouts
           </span>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Choose the design archetype for your generated Cash Memos &amp; Tax Invoices. All templates render 100% compliant RBI, FEMA, and GST data.
-        </p>
 
-        {/* Template Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {TEMPLATES.map((tmpl) => {
-            const isSelected = profile.invoiceTemplate === tmpl.id;
-            return (
-              <div
-                key={tmpl.id}
-                onClick={() => set('invoiceTemplate', tmpl.id)}
-                className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
-                  isSelected
-                    ? 'border-accent bg-card shadow-md ring-2 ring-accent/30'
-                    : 'border-border/70 bg-card/60 hover:bg-card hover:border-border'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {tmpl.style}
-                    </span>
-                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${tmpl.badgeColor}`}>
-                      {tmpl.badge}
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-foreground mb-1">{tmpl.name}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{tmpl.description}</p>
-                </div>
+        {/* Side-by-Side Grid Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          {/* Left Column: Template Selector & Theme Controls (5 cols on xl) */}
+          <div className="xl:col-span-5 space-y-5">
+            {/* Template Archetype Cards */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                Select Layout Archetype
+              </label>
 
-                <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-accent flex items-center gap-1">
-                    <Eye className="size-3" />
-                    <span>{isSelected ? 'Active Selection' : 'Click to Select & Preview'}</span>
-                  </span>
-                  {isSelected && (
-                    <span className="size-5 rounded-full bg-accent text-white flex items-center justify-center">
-                      <Check className="size-3.5" />
-                    </span>
-                  )}
-                </div>
+              <div className="space-y-2.5">
+                {TEMPLATES.map((tmpl) => {
+                  const isSelected = profile.invoiceTemplate === tmpl.id;
+                  return (
+                    <div
+                      key={tmpl.id}
+                      onClick={() => set('invoiceTemplate', tmpl.id)}
+                      className={`relative rounded-xl border p-3.5 cursor-pointer transition-all duration-200 flex items-start gap-3.5 ${
+                        isSelected
+                          ? 'border-accent bg-card shadow-md ring-2 ring-accent/30'
+                          : 'border-border/70 bg-card/60 hover:bg-card hover:border-border'
+                      }`}
+                    >
+                      <div className="pt-0.5">
+                        <div
+                          className={`size-5 rounded-full border flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? 'border-accent bg-accent text-white'
+                              : 'border-muted-foreground/40 bg-muted/20'
+                          }`}
+                        >
+                          {isSelected && <Check className="size-3 stroke-[3]" />}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h3 className="text-xs font-bold text-foreground truncate">{tmpl.name}</h3>
+                          <span
+                            className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md border shrink-0 ${tmpl.badgeColor}`}
+                          >
+                            {tmpl.badge}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+                          {tmpl.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-
-        {/* Accent Color Picker */}
-        <div className="pt-2 border-t border-border/60">
-          <label className="text-xs font-bold text-foreground block mb-2">Primary Accent Color</label>
-          <div className="flex flex-wrap items-center gap-3">
-            {ACCENT_COLORS.map((col) => (
-              <button
-                key={col.hex}
-                type="button"
-                onClick={() => set('invoiceAccentColor', col.hex)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-                  profile.invoiceAccentColor === col.hex
-                    ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent'
-                    : 'border-border/60 hover:bg-muted text-muted-foreground'
-                }`}
-              >
-                <span className="size-3.5 rounded-full shrink-0 shadow-xs" style={{ background: col.hex }} />
-                <span>{col.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Inline Live Preview Window */}
-        <div className="pt-4 border-t border-border/60">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-accent" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                Real-Time Render Preview ({TEMPLATES.find((t) => t.id === profile.invoiceTemplate)?.name})
-              </h3>
             </div>
-            <button
-              onClick={() => setFullscreenPreview(true)}
-              className="text-xs text-accent hover:underline flex items-center gap-1 font-semibold"
-            >
-              <Maximize2 className="size-3.5" />
-              <span>Expand Preview</span>
-            </button>
-          </div>
 
-          <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 md:p-6 flex items-center justify-center overflow-hidden">
-            <div className="w-full max-w-[760px] h-[520px] bg-white rounded-lg shadow-2xl overflow-hidden border border-neutral-700">
-              <iframe
-                srcDoc={previewHtml}
-                title="Real-Time Invoice Preview"
-                className="w-full h-full border-none"
-              />
+            {/* Accent Color Picker */}
+            <div className="pt-4 border-t border-border/60 space-y-2.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                Primary Accent Color
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {ACCENT_COLORS.map((col) => {
+                  const isColorActive = profile.invoiceAccentColor === col.hex;
+                  return (
+                    <button
+                      key={col.hex}
+                      type="button"
+                      onClick={() => set('invoiceAccentColor', col.hex)}
+                      className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-xs font-semibold transition-all ${
+                        isColorActive
+                          ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent'
+                          : 'border-border/60 hover:bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <span className="size-3.5 rounded-full shrink-0 shadow-xs" style={{ background: col.hex }} />
+                      <span className="truncate text-[11px]">{col.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </div>
-      </Card>
 
-      {/* ─── SECTION 2: COMPANY IDENTITY ─── */}
-      <Card padding="lg" className="space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Company Identity</h2>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Input
-            label="Company Name *"
-            value={profile.companyName}
-            onChange={(e) => set('companyName', e.target.value)}
-            placeholder="e.g. S.P. FOREX PRIVATE LIMITED"
-          />
-          <Input
-            label="Phone"
-            value={profile.phone}
-            onChange={(e) => set('phone', e.target.value)}
-            placeholder="+91 11 2345 6789"
-          />
-          <Input
-            label="Email"
-            type="email"
-            value={profile.email}
-            onChange={(e) => set('email', e.target.value)}
-            placeholder="info@spforex.com"
-          />
-          <Input
-            label="Website"
-            value={profile.website}
-            onChange={(e) => set('website', e.target.value)}
-            placeholder="www.spforex.com"
-          />
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Input
-            label="Address Line 1"
-            value={profile.address1}
-            onChange={(e) => set('address1', e.target.value)}
-            placeholder="Shop / Unit No., Building Name"
-          />
-          <Input
-            label="Address Line 2"
-            value={profile.address2}
-            onChange={(e) => set('address2', e.target.value)}
-            placeholder="Street, Area / Landmark"
-          />
-        </div>
-
-        <div className="grid sm:grid-cols-4 gap-3">
-          <Input
-            label="City"
-            value={profile.city}
-            onChange={(e) => set('city', e.target.value)}
-            placeholder="New Delhi"
-          />
-          <Input
-            label="State"
-            value={profile.state}
-            onChange={(e) => set('state', e.target.value)}
-            placeholder="Delhi"
-          />
-          <Input
-            label="State Code"
-            value={profile.stateCode}
-            onChange={(e) => set('stateCode', e.target.value)}
-            placeholder="07"
-            maxLength={2}
-          />
-          <Input
-            label="Pincode"
-            value={profile.pincode}
-            onChange={(e) => set('pincode', e.target.value)}
-            placeholder="110001"
-            maxLength={6}
-          />
-        </div>
-      </Card>
-
-      {/* ─── SECTION 3: REGULATORY CREDENTIALS ─── */}
-      <Card padding="lg" className="space-y-4">
-        <h2 className="text-sm font-bold text-foreground">RBI / Regulatory Identifiers</h2>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <Input
-            label="RBI Licence No."
-            value={profile.rbiLicenceNo}
-            onChange={(e) => set('rbiLicenceNo', e.target.value)}
-            placeholder="e.g. FE.DEL.FFMC/0421/2024"
-            className="font-mono"
-          />
-          <Input
-            label="CIN"
-            value={profile.cin}
-            onChange={(e) => set('cin', e.target.value.toUpperCase())}
-            placeholder="U74999DL2024PTC123456"
-            className="font-mono"
-          />
-          <Input
-            label="PAN"
-            value={profile.pan}
-            onChange={(e) => set('pan', e.target.value.toUpperCase())}
-            placeholder="AABCS1234F"
-            maxLength={10}
-            className="font-mono"
-          />
-          <Input
-            label="GSTIN"
-            value={profile.gstin}
-            onChange={(e) => set('gstin', e.target.value.toUpperCase())}
-            placeholder="07AABCS1234F1Z5"
-            maxLength={15}
-            className="font-mono"
-          />
-        </div>
-      </Card>
-
-      {/* ─── SECTION 4: LOGO & SIGNATURE ─── */}
-      <Card padding="lg" className="space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Brand Assets</h2>
-        <div className="grid sm:grid-cols-2 gap-6">
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground block mb-2">Company Logo</label>
-            <div className="flex items-center gap-4">
-              {profile.logoBase64 ? (
-                <img
-                  src={profile.logoBase64}
-                  alt="Company logo"
-                  className="h-14 max-w-[160px] object-contain border rounded-lg p-1 bg-white"
-                />
-              ) : (
-                <div className="h-14 w-28 border border-dashed rounded-lg flex items-center justify-center text-xs text-muted-foreground bg-muted/20">
-                  No logo
-                </div>
-              )}
+            {/* Expand Fullscreen Callout */}
+            <div className="pt-3">
               <Button
-                type="button"
                 variant="outline"
-                size="sm"
-                onClick={() => logoRef.current?.click()}
-                className="gap-1.5"
+                onClick={() => setFullscreenPreview(true)}
+                className="w-full gap-2 text-xs font-semibold py-2.5 border-dashed"
               >
-                <Upload className="size-3.5" />
-                Upload Logo
+                <Maximize2 className="size-3.5 text-accent" />
+                <span>Open Expanded A4 High-Res View</span>
               </Button>
-              <input
-                ref={logoRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload('logoBase64', file);
-                }}
-              />
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground block mb-2">
-              Authorized Signatory Stamp
-            </label>
-            <div className="flex items-center gap-4">
-              {profile.signatureBase64 ? (
-                <img
-                  src={profile.signatureBase64}
-                  alt="Signature"
-                  className="h-14 max-w-[160px] object-contain border rounded-lg p-1 bg-white"
+          {/* Right Column: Live Real-Time Invoice Preview Canvas (7 cols on xl) */}
+          <div className="xl:col-span-7 flex flex-col space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-accent" />
+                <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  Live Canvas — {activeTemplate.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Zero Latency Sync</span>
+              </div>
+            </div>
+
+            {/* Embedded Live Preview Canvas Container */}
+            <div className="w-full h-[660px] xl:h-[720px] bg-neutral-950/90 border border-neutral-800 rounded-2xl p-3 sm:p-4 flex items-center justify-center overflow-hidden shadow-inner">
+              <div className="w-full h-full max-w-[800px] bg-white rounded-xl shadow-2xl overflow-hidden border border-neutral-700">
+                <iframe
+                  srcDoc={previewHtml}
+                  title="Real-Time Invoice Preview Canvas"
+                  className="w-full h-full border-none"
                 />
-              ) : (
-                <div className="h-14 w-28 border border-dashed rounded-lg flex items-center justify-center text-xs text-muted-foreground bg-muted/20">
-                  No signature
-                </div>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => sigRef.current?.click()}
-                className="gap-1.5"
-              >
-                <Upload className="size-3.5" />
-                Upload Stamp
-              </Button>
-              <input
-                ref={sigRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload('signatureBase64', file);
-                }}
-              />
+              </div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* ─── SECTION 5: INVOICE NUMBER SEQUENCE ─── */}
-      <Card padding="lg" className="space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Invoice Numbering Sequence</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-muted-foreground block mb-1">Format Pattern</label>
-            <select
-              value={customFormat ? 'custom' : profile.invoiceNumberFormat}
-              onChange={(e) => {
-                if (e.target.value === 'custom') {
-                  setCustomFormat(true);
-                } else {
-                  setCustomFormat(false);
-                  set('invoiceNumberFormat', e.target.value);
-                }
-              }}
-              className="w-full h-9 rounded-xl border border-input bg-background text-xs px-2"
-            >
-              {INVOICE_FORMAT_PRESETS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label} (e.g. {p.preview})
-                </option>
-              ))}
-              <option value="custom">Custom Format...</option>
-            </select>
-            {customFormat && (
-              <Input
-                value={profile.invoiceNumberFormat}
-                onChange={(e) => set('invoiceNumberFormat', e.target.value)}
-                placeholder="e.g. BILL/{YY}/{SEQ}"
-                className="mt-2 font-mono text-xs"
-              />
-            )}
+      {/* ─── SECTION 2 & 3: COMPANY IDENTITY & REGULATORY IDENTIFIERS ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Company Identity */}
+        <Card padding="lg" className="space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/50 pb-3">
+            <Building2 className="size-4 text-accent" />
+            <h2 className="text-sm font-bold text-foreground">Company Identity &amp; Contact</h2>
           </div>
-          <Input
-            label="Sequence Counter Seed"
-            type="number"
-            value={profile.invoiceNumberSeed}
-            onChange={(e) => set('invoiceNumberSeed', parseInt(e.target.value, 10) || 0)}
-            placeholder="0"
-          />
-        </div>
-      </Card>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input
+              label="Company Name *"
+              value={profile.companyName}
+              onChange={(e) => set('companyName', e.target.value)}
+              placeholder="e.g. S.P. FOREX PRIVATE LIMITED"
+            />
+            <Input
+              label="Phone"
+              value={profile.phone}
+              onChange={(e) => set('phone', e.target.value)}
+              placeholder="+91 11 2345 6789"
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={profile.email}
+              onChange={(e) => set('email', e.target.value)}
+              placeholder="info@spforex.com"
+            />
+            <Input
+              label="Website"
+              value={profile.website}
+              onChange={(e) => set('website', e.target.value)}
+              placeholder="www.spforex.com"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input
+              label="Address Line 1"
+              value={profile.address1}
+              onChange={(e) => set('address1', e.target.value)}
+              placeholder="Shop / Unit No., Building Name"
+            />
+            <Input
+              label="Address Line 2"
+              value={profile.address2}
+              onChange={(e) => set('address2', e.target.value)}
+              placeholder="Street, Area / Landmark"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Input
+              label="City"
+              value={profile.city}
+              onChange={(e) => set('city', e.target.value)}
+              placeholder="New Delhi"
+            />
+            <Input
+              label="State"
+              value={profile.state}
+              onChange={(e) => set('state', e.target.value)}
+              placeholder="Delhi"
+            />
+            <Input
+              label="State Code"
+              value={profile.stateCode}
+              onChange={(e) => set('stateCode', e.target.value)}
+              placeholder="07"
+              maxLength={2}
+            />
+            <Input
+              label="Pincode"
+              value={profile.pincode}
+              onChange={(e) => set('pincode', e.target.value)}
+              placeholder="110001"
+              maxLength={6}
+            />
+          </div>
+        </Card>
+
+        {/* Regulatory Identifiers */}
+        <Card padding="lg" className="space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/50 pb-3">
+            <ShieldCheck className="size-4 text-accent" />
+            <h2 className="text-sm font-bold text-foreground">RBI / Regulatory Identifiers</h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input
+              label="RBI Licence No."
+              value={profile.rbiLicenceNo}
+              onChange={(e) => set('rbiLicenceNo', e.target.value)}
+              placeholder="e.g. FE.DEL.FFMC/0421/2024"
+              className="font-mono"
+            />
+            <Input
+              label="CIN"
+              value={profile.cin}
+              onChange={(e) => set('cin', e.target.value.toUpperCase())}
+              placeholder="U74999DL2024PTC123456"
+              className="font-mono"
+            />
+            <Input
+              label="PAN"
+              value={profile.pan}
+              onChange={(e) => set('pan', e.target.value.toUpperCase())}
+              placeholder="AABCS1234F"
+              maxLength={10}
+              className="font-mono"
+            />
+            <Input
+              label="GSTIN"
+              value={profile.gstin}
+              onChange={(e) => set('gstin', e.target.value.toUpperCase())}
+              placeholder="07AABCS1234F1Z5"
+              maxLength={15}
+              className="font-mono"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-3 pt-2">
+            <Input
+              label="Default SAC Code"
+              value={profile.defaultSacCode}
+              onChange={(e) => set('defaultSacCode', e.target.value)}
+              placeholder="997157"
+              className="font-mono"
+            />
+            <Input
+              label="CGST Rate (%)"
+              type="number"
+              value={profile.defaultCgstRate}
+              onChange={(e) => set('defaultCgstRate', parseFloat(e.target.value) || 0)}
+              placeholder="9"
+            />
+            <Input
+              label="SGST Rate (%)"
+              type="number"
+              value={profile.defaultSgstRate}
+              onChange={(e) => set('defaultSgstRate', parseFloat(e.target.value) || 0)}
+              placeholder="9"
+            />
+          </div>
+        </Card>
+      </div>
+
+      {/* ─── SECTION 4 & 5: BRAND ASSETS & INVOICE NUMBERING ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Brand Assets */}
+        <Card padding="lg" className="space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/50 pb-3">
+            <Upload className="size-4 text-accent" />
+            <h2 className="text-sm font-bold text-foreground">Brand Assets &amp; Authorized Signature</h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-2">Company Logo</label>
+              <div className="flex items-center gap-3">
+                {profile.logoBase64 ? (
+                  <img
+                    src={profile.logoBase64}
+                    alt="Company logo"
+                    className="h-14 max-w-[140px] object-contain border rounded-lg p-1 bg-white"
+                  />
+                ) : (
+                  <div className="h-14 w-24 border border-dashed rounded-lg flex items-center justify-center text-[11px] text-muted-foreground bg-muted/20">
+                    No logo
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => logoRef.current?.click()}
+                  className="gap-1.5 text-xs"
+                >
+                  <Upload className="size-3.5" />
+                  Upload
+                </Button>
+                <input
+                  ref={logoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload('logoBase64', file);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-2">
+                Authorized Signatory Stamp
+              </label>
+              <div className="flex items-center gap-3">
+                {profile.signatureBase64 ? (
+                  <img
+                    src={profile.signatureBase64}
+                    alt="Signature"
+                    className="h-14 max-w-[140px] object-contain border rounded-lg p-1 bg-white"
+                  />
+                ) : (
+                  <div className="h-14 w-24 border border-dashed rounded-lg flex items-center justify-center text-[11px] text-muted-foreground bg-muted/20">
+                    No stamp
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sigRef.current?.click()}
+                  className="gap-1.5 text-xs"
+                >
+                  <Upload className="size-3.5" />
+                  Upload
+                </Button>
+                <input
+                  ref={sigRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload('signatureBase64', file);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Invoice Numbering Sequence */}
+        <Card padding="lg" className="space-y-4">
+          <div className="flex items-center gap-2 border-b border-border/50 pb-3">
+            <Hash className="size-4 text-accent" />
+            <h2 className="text-sm font-bold text-foreground">Invoice Numbering Sequence</h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Format Pattern</label>
+              <select
+                value={customFormat ? 'custom' : profile.invoiceNumberFormat}
+                onChange={(e) => {
+                  if (e.target.value === 'custom') {
+                    setCustomFormat(true);
+                  } else {
+                    setCustomFormat(false);
+                    set('invoiceNumberFormat', e.target.value);
+                  }
+                }}
+                className="w-full h-9 rounded-xl border border-input bg-background text-xs px-2"
+              >
+                {INVOICE_FORMAT_PRESETS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label} (e.g. {p.preview})
+                  </option>
+                ))}
+                <option value="custom">Custom Format...</option>
+              </select>
+              {customFormat && (
+                <Input
+                  value={profile.invoiceNumberFormat}
+                  onChange={(e) => set('invoiceNumberFormat', e.target.value)}
+                  placeholder="e.g. BILL/{YY}/{SEQ}"
+                  className="mt-2 font-mono text-xs"
+                />
+              )}
+            </div>
+            <Input
+              label="Sequence Counter Seed"
+              type="number"
+              value={profile.invoiceNumberSeed}
+              onChange={(e) => set('invoiceNumberSeed', parseInt(e.target.value, 10) || 0)}
+              placeholder="0"
+            />
+          </div>
+        </Card>
+      </div>
 
       {/* ─── SECTION 6: STATUTORY DISCLAIMERS ─── */}
       <Card padding="lg" className="space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Statutory RBI Disclaimers</h2>
-        <div className="space-y-3">
+        <div className="flex items-center gap-2 border-b border-border/50 pb-3">
+          <FileText className="size-4 text-accent" />
+          <h2 className="text-sm font-bold text-foreground">Statutory RBI Disclaimers</h2>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-semibold text-muted-foreground block mb-1">Disclaimer 1 (Header Note)</label>
             <textarea
@@ -717,20 +803,20 @@ export default function BusinessProfilePage() {
         </div>
       </Card>
 
-      {/* ─── FULLSCREEN MODAL PREVIEW ─── */}
+      {/* ─── EXPANDED FULLSCREEN MODAL (PROPERLY CONSTRAINED TO SCREEN HEIGHT WITH SMOOTH A4 SCROLL) ─── */}
       {fullscreenPreview && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-150">
-          <div className="bg-card border border-border w-full max-w-5xl h-[92vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+          <div className="bg-card border border-border w-full max-w-6xl h-[94vh] max-h-[94vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+            <div className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-card shrink-0">
               <div className="flex items-center gap-3">
                 <Palette className="size-5 text-accent" />
                 <div>
                   <h3 className="text-sm font-bold text-foreground">
-                    PDF Style Preview — {TEMPLATES.find((t) => t.id === profile.invoiceTemplate)?.name}
+                    PDF Style Preview — {activeTemplate.name}
                   </h3>
                   <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                    <span>Accent:</span>
+                    <span>Theme Accent:</span>
                     <span className="size-2.5 rounded-full" style={{ background: profile.invoiceAccentColor }} />
                     <span className="font-mono">{profile.invoiceAccentColor}</span>
                   </div>
@@ -749,20 +835,20 @@ export default function BusinessProfilePage() {
               </div>
             </div>
 
-            {/* Modal Body: Rendered HTML iframe */}
-            <div className="flex-1 bg-neutral-950 p-4 md:p-8 flex items-center justify-center overflow-auto">
-              <div className="w-full max-w-[800px] h-full bg-white rounded-xl shadow-2xl overflow-hidden border border-neutral-700">
+            {/* Modal Body: Scrollable Vertical Canvas Container */}
+            <div className="flex-1 w-full bg-neutral-950 p-4 sm:p-8 overflow-y-auto overflow-x-hidden flex justify-center items-start">
+              <div className="w-full max-w-[850px] bg-white rounded-xl shadow-2xl border border-neutral-700 overflow-hidden shrink-0">
                 <iframe
                   srcDoc={previewHtml}
                   title="Fullscreen Invoice PDF Preview"
-                  className="w-full h-full border-none"
+                  className="w-full min-h-[1100px] border-none block"
                 />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-card text-xs text-muted-foreground">
-              <span>All 5 templates automatically synchronize with your live company credentials.</span>
+            <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-card text-xs text-muted-foreground shrink-0">
+              <span>Previewing sample Cash Memo with your active credentials and chosen theme.</span>
               <Button size="sm" onClick={() => setFullscreenPreview(false)}>
                 Done
               </Button>
