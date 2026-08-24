@@ -19,7 +19,7 @@ const SCENARIO_CARDS = [
 const FAQS = [
   {
     q: 'What currencies does VaultBill support?',
-    a: 'All major currencies including USD, EUR, GBP, JPY, AUD, and 150+ more. Rates sync hourly from RBI FBIL and open exchange APIs for real-time accuracy.',
+    a: 'All major currencies including USD, EUR, GBP, JPY, AUD, and 150+ more. Rates are sourced from the official RBI/FBIL daily reference rates (published by Financial Benchmarks India Ltd per RBI mandate) and FEDAI interbank market rates for Gulf currencies — ensuring statutory compliance for FEMA, LRS, and export invoicing.',
   },
   {
     q: 'Is my data secure and compliant?',
@@ -36,7 +36,7 @@ const FAQS = [
 ];
 
 const FEATURES = [
-  { icon: Globe, title: 'Multi-Currency', desc: 'Invoice in 150+ currencies with live exchange rates synced every hour.' },
+  { icon: Globe, title: 'Multi-Currency', desc: 'Invoice in 150+ currencies using official RBI/FBIL reference rates updated daily — the statutory benchmark for FEMA & export compliance.' },
   { icon: Shield, title: 'Compliance Ready', desc: 'FEMA, LRS, FLM-8 reporting built-in. Auto-generate Form A2s and track limits.' },
   { icon: FileText, title: 'Smart PDFs', desc: 'Pixel-perfect invoice PDFs with GST splits, LUT references, and payment links.' },
   { icon: TrendingUp, title: 'Live Dashboard', desc: 'Revenue analytics, compliance scorecard, and pending realization alerts at a glance.' },

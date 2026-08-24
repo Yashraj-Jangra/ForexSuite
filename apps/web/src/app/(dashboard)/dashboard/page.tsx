@@ -126,7 +126,7 @@ export default function DashboardPage() {
       return;
     }
 
-    const rFrom = fromCurr === 'INR' ? 1 : rates.find((r) => r.code === fromCurr)?.rateInInr || 86.85;
+    const rFrom = fromCurr === 'INR' ? 1 : rates.find((r) => r.code === fromCurr)?.rateInInr || 95.78;
     const rTo = toCurr === 'INR' ? 1 : rates.find((r) => r.code === toCurr)?.rateInInr || 1;
 
     if (rFrom > 0 && rTo > 0) {
@@ -137,12 +137,12 @@ export default function DashboardPage() {
 
   // Currencies list for converter
   const availableCurrencies = rates.length > 0 ? rates : [
-    { code: 'USD', name: 'US Dollar', symbol: '$', flag: '🇺🇸', rateInInr: 86.85, inverseRate: 0.0115, change24h: 0.12, high24h: 87.05, low24h: 86.60 },
-    { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺', rateInInr: 94.40, inverseRate: 0.0106, change24h: 0.08, high24h: 94.75, low24h: 94.10 },
-    { code: 'GBP', name: 'British Pound', symbol: '£', flag: '🇬🇧', rateInInr: 111.35, inverseRate: 0.0090, change24h: 0.15, high24h: 111.75, low24h: 110.95 },
-    { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', flag: '🇦🇪', rateInInr: 23.65, inverseRate: 0.0423, change24h: 0.02, high24h: 23.70, low24h: 23.60 },
-    { code: 'SAR', name: 'Saudi Riyal', symbol: '﷼', flag: '🇸🇦', rateInInr: 23.16, inverseRate: 0.0432, change24h: 0.04, high24h: 23.22, low24h: 23.10 },
-    { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', flag: '🇸🇬', rateInInr: 64.75, inverseRate: 0.0154, change24h: -0.06, high24h: 64.95, low24h: 64.55 },
+    { code: 'USD', name: 'US Dollar', symbol: '$', flag: '🇺🇸', rateInInr: 95.78, inverseRate: 0.01044, change24h: 0.12, high24h: 95.97, low24h: 95.59 },
+    { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺', rateInInr: 111.73, inverseRate: 0.00895, change24h: 0.08, high24h: 111.95, low24h: 111.51 },
+    { code: 'GBP', name: 'British Pound', symbol: '£', flag: '🇬🇧', rateInInr: 130.47, inverseRate: 0.00766, change24h: 0.15, high24h: 130.73, low24h: 130.21 },
+    { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', flag: '🇦🇪', rateInInr: 26.07, inverseRate: 0.03835, change24h: 0.02, high24h: 26.12, low24h: 26.02 },
+    { code: 'SAR', name: 'Saudi Riyal', symbol: '﷼', flag: '🇸🇦', rateInInr: 25.54, inverseRate: 0.03915, change24h: 0.04, high24h: 25.60, low24h: 25.49 },
+    { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', flag: '🇸🇬', rateInInr: 75.34, inverseRate: 0.01327, change24h: -0.06, high24h: 75.49, low24h: 75.19 },
     { code: 'INR', name: 'Indian Rupee', symbol: '₹', flag: '🇮🇳', rateInInr: 1.00, inverseRate: 1.0000, change24h: 0.00, high24h: 1.00, low24h: 1.00 },
   ];
 
@@ -155,7 +155,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Financial Overview</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Real-time multi-currency invoicing, statutory FEMA realization, and foreign exchange rates.
+            Real-time multi-currency invoicing, statutory FEMA realization, and official RBI/FBIL reference rates.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -170,11 +170,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Live Forex Rates Ticker (Dynamically pulled from Database) */}
+      {/* Live Forex Rates Ticker (Dynamically pulled from Database — RBI/FBIL Official Rates) */}
       <div className="flex items-center gap-3 overflow-x-auto p-2.5 rounded-xl bg-card border border-border text-xs scrollbar-none">
         <div className="flex items-center gap-1.5 font-bold text-accent shrink-0 pl-1">
           <TrendingUp className="size-3.5" />
-          <span className="text-[11px] uppercase tracking-wider">Live Spot Rates:</span>
+          <span className="text-[11px] uppercase tracking-wider">RBI/FBIL Rates:</span>
         </div>
         <div className="flex items-center gap-3 min-w-max">
           {topTickerItems.map((item) => {
@@ -197,6 +197,9 @@ export default function DashboardPage() {
                   }`}
                 >
                   {isPos ? '+' : ''}{item.change24h.toFixed(2)}%
+                </span>
+                <span className="text-[9px] text-muted-foreground/60">
+                  {['AED','SAR','KWD','QAR','OMR','BHD'].includes(item.code) ? '🟠' : '🔴'}
                 </span>
               </div>
             );

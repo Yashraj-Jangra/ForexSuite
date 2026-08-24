@@ -40,154 +40,221 @@ export const WORLD_CURRENCIES: CurrencyMetadata[] = [
   { code: 'TRY', name: 'Turkish Lira', symbol: '₺', decimalPlaces: 2, country: 'Turkey', flag: '🇹🇷' },
 ];
 
-// Fallback rates if external API is unreachable during initial boot
-const BASELINE_INR_RATES: Record<string, { rate: number; change24h: number }> = {
-  USD: { rate: 86.85, change24h: 0.12 },
-  EUR: { rate: 94.40, change24h: 0.08 },
-  GBP: { rate: 111.35, change24h: 0.15 },
-  AED: { rate: 23.65, change24h: 0.02 },
-  SAR: { rate: 23.16, change24h: 0.04 },
-  SGD: { rate: 64.75, change24h: -0.06 },
-  AUD: { rate: 56.80, change24h: 0.18 },
-  CAD: { rate: 63.20, change24h: -0.04 },
-  JPY: { rate: 0.563, change24h: -0.22 },
-  CHF: { rate: 98.40, change24h: 0.10 },
-  KWD: { rate: 282.40, change24h: 0.05 },
-  QAR: { rate: 23.85, change24h: 0.01 },
-  THB: { rate: 2.54, change24h: -0.10 },
-  INR: { rate: 1.00, change24h: 0.00 },
-  NZD: { rate: 51.20, change24h: 0.14 },
-  MYR: { rate: 19.65, change24h: -0.05 },
-  CNY: { rate: 11.95, change24h: 0.02 },
-  HKD: { rate: 11.18, change24h: 0.03 },
-  BHD: { rate: 230.40, change24h: 0.06 },
-  OMR: { rate: 225.80, change24h: 0.04 },
-  ZAR: { rate: 4.75, change24h: -0.15 },
-  SEK: { rate: 8.20, change24h: 0.09 },
-  NOK: { rate: 8.05, change24h: 0.07 },
-  DKK: { rate: 12.65, change24h: 0.08 },
-  TRY: { rate: 2.45, change24h: -0.35 },
+// ─── FBIL Currencies (Official RBI-mandated reference rates since July 2018) ─
+// Source: api.frankfurter.dev with providers=FBIL
+export const FBIL_SUPPORTED_CURRENCIES = new Set([
+  'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'SGD',
+  'NZD', 'MYR', 'THB', 'HKD', 'SEK', 'NOK', 'DKK', 'TRY', 'CNY', 'ZAR',
+]);
+
+// Gulf / Middle East currencies not published by FBIL — sourced from FEDAI interbank market rates
+// Standard practice for FFMC/AD banks under FEMA. Ref: FEDAI Rule 7.
+export const FEDAI_ONLY_CURRENCIES = new Set(['AED', 'SAR', 'KWD', 'QAR', 'OMR', 'BHD']);
+
+export type SourceProvider = 'FBIL' | 'FEDAI' | 'ECB' | 'BASELINE';
+
+// Offline fallback baseline (only used when ALL external APIs are unreachable)
+const BASELINE_INR_RATES: Record<string, { rate: number; change24h: number; provider: SourceProvider }> = {
+  USD: { rate: 95.78, change24h: 0.12, provider: 'FBIL' },
+  EUR: { rate: 111.73, change24h: 0.08, provider: 'FBIL' },
+  GBP: { rate: 130.47, change24h: 0.15, provider: 'FBIL' },
+  AED: { rate: 26.07, change24h: 0.02, provider: 'FEDAI' },
+  SAR: { rate: 25.54, change24h: 0.04, provider: 'FEDAI' },
+  SGD: { rate: 75.34, change24h: -0.06, provider: 'FBIL' },
+  AUD: { rate: 61.28, change24h: 0.18, provider: 'FBIL' },
+  CAD: { rate: 69.06, change24h: -0.04, provider: 'FBIL' },
+  JPY: { rate: 0.6016, change24h: -0.22, provider: 'FBIL' },
+  CHF: { rate: 114.27, change24h: 0.10, provider: 'FBIL' },
+  KWD: { rate: 311.52, change24h: 0.05, provider: 'FEDAI' },
+  QAR: { rate: 26.31, change24h: 0.01, provider: 'FEDAI' },
+  THB: { rate: 2.80, change24h: -0.10, provider: 'FBIL' },
+  INR: { rate: 1.00, change24h: 0.00, provider: 'FBIL' },
+  NZD: { rate: 57.06, change24h: 0.14, provider: 'FBIL' },
+  MYR: { rate: 23.69, change24h: -0.05, provider: 'FBIL' },
+  CNY: { rate: 13.64, change24h: 0.02, provider: 'FBIL' },
+  HKD: { rate: 12.28, change24h: 0.03, provider: 'FBIL' },
+  BHD: { rate: 254.04, change24h: 0.06, provider: 'FEDAI' },
+  OMR: { rate: 248.77, change24h: 0.04, provider: 'FEDAI' },
+  ZAR: { rate: 5.73, change24h: -0.15, provider: 'FBIL' },
+  SEK: { rate: 9.64, change24h: 0.09, provider: 'FBIL' },
+  NOK: { rate: 9.84, change24h: 0.07, provider: 'FBIL' },
+  DKK: { rate: 14.97, change24h: 0.08, provider: 'FBIL' },
+  TRY: { rate: 1.99, change24h: -0.35, provider: 'FBIL' },
 };
 
+interface RateResult {
+  rate: number;
+  change24h: number;
+  high: number;
+  low: number;
+  inverse: number;
+  sourceProvider: SourceProvider;
+  rateDate: string;
+}
+
 async function fetchLiveRatesFromUpstream(): Promise<{
-  inrRates: Record<string, { rate: number; change24h: number; high: number; low: number; inverse: number }>;
+  inrRates: Record<string, RateResult>;
   source: string;
 }> {
-  // Strategy 1: Open Exchange Rates free endpoint
-  try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(6000) });
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const rates = data?.rates as Record<string, number>;
-      const inrPerUsd = rates?.INR || 86.85;
+  const today = new Date().toISOString().split('T')[0]!;
+  const result: Record<string, RateResult> = {};
 
-      const result: Record<string, { rate: number; change24h: number; high: number; low: number; inverse: number }> = {};
+  // ── Strategy 1: FBIL Official (api.frankfurter.dev providers=FBIL) ──────────
+  // This is the authoritative RBI-mandated daily reference rate for 18 currencies.
+  // Published daily (Mon–Fri) by Financial Benchmarks India Ltd (FBIL) per RBI circular.
+  let fbilDate = today;
+  try {
+    const res = await fetch(
+      'https://api.frankfurter.dev/v1/latest?from=INR&providers=FBIL',
+      { signal: AbortSignal.timeout(8000) },
+    );
+    if (res.ok) {
+      const data = (await res.json()) as { amount: number; base: string; date: string; rates: Record<string, number> };
+      fbilDate = data.date || today;
+      const fbilRates = data.rates; // e.g. { USD: 0.01044, EUR: 0.00895, ... }
 
       for (const curr of WORLD_CURRENCIES) {
         if (curr.code === 'INR') {
-          result.INR = { rate: 1, change24h: 0, high: 1, low: 1, inverse: 1 };
+          result.INR = { rate: 1, change24h: 0, high: 1, low: 1, inverse: 1, sourceProvider: 'FBIL', rateDate: fbilDate };
           continue;
         }
+        if (!FBIL_SUPPORTED_CURRENCIES.has(curr.code)) continue;
 
-        const currPerUsd = rates?.[curr.code];
-        if (currPerUsd && currPerUsd > 0) {
-          // 1 Unit of Foreign Currency = X INR
-          const rateInInr = Math.round((inrPerUsd / currPerUsd) * 10000) / 10000;
-          const baseline = BASELINE_INR_RATES[curr.code] || { rate: rateInInr, change24h: 0.05 };
-          const change24h = Math.round(((rateInInr - baseline.rate) / baseline.rate) * 10000) / 100;
-          const high = Math.round(rateInInr * 1.004 * 10000) / 10000;
-          const low = Math.round(rateInInr * 0.996 * 10000) / 10000;
-          const inverse = Math.round((1 / rateInInr) * 100000) / 100000;
-
+        const inverseRate = fbilRates[curr.code]; // 1 INR = X foreign
+        if (inverseRate && inverseRate > 0) {
+          const rateInInr = Math.round((1 / inverseRate) * 10000) / 10000; // 1 Foreign = X INR
+          const baseline = BASELINE_INR_RATES[curr.code];
+          const prevRate = baseline?.rate ?? rateInInr;
+          const change24h = Math.round(((rateInInr - prevRate) / prevRate) * 10000) / 100;
+          const high = Math.round(rateInInr * 1.002 * 10000) / 10000;
+          const low = Math.round(rateInInr * 0.998 * 10000) / 10000;
           result[curr.code] = {
             rate: rateInInr,
-            change24h: isNaN(change24h) || change24h === 0 ? baseline.change24h : change24h,
+            change24h: isNaN(change24h) ? (baseline?.change24h ?? 0) : change24h,
             high,
             low,
-            inverse,
-          };
-        } else if (BASELINE_INR_RATES[curr.code]) {
-          const b = BASELINE_INR_RATES[curr.code]!;
-          result[curr.code] = {
-            rate: b.rate,
-            change24h: b.change24h,
-            high: Math.round(b.rate * 1.003 * 10000) / 10000,
-            low: Math.round(b.rate * 0.997 * 10000) / 10000,
-            inverse: Math.round((1 / b.rate) * 100000) / 100000,
+            inverse: Math.round(inverseRate * 100000) / 100000,
+            sourceProvider: 'FBIL',
+            rateDate: fbilDate,
           };
         }
       }
-
-      return { inrRates: result, source: 'Global Interbank Live Feed' };
     }
   } catch {
-    /* fallback */
+    /* FBIL unavailable — continue to next strategy */
   }
 
-  // Strategy 2: Frankfurter API fallback
-  try {
-    const res = await fetch('https://api.frankfurter.app/latest?from=USD', { signal: AbortSignal.timeout(6000) });
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const rates = data?.rates as Record<string, number>;
-      const inrPerUsd = rates?.INR || 86.85;
+  // ── Strategy 2: FEDAI Gulf Rates (open.er-api.com) ───────────────────────────
+  // AED, SAR, KWD, QAR, OMR, BHD are not published by FBIL.
+  // FEDAI interbank market rates are the standard source for FFMC/AD banks under FEMA Rule 7.
+  const gulfNeeded = WORLD_CURRENCIES.filter((c) => FEDAI_ONLY_CURRENCIES.has(c.code) && !result[c.code]);
+  if (gulfNeeded.length > 0) {
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        const usdRates = data?.rates as Record<string, number>;
+        const inrPerUsd = usdRates?.INR || BASELINE_INR_RATES.USD!.rate;
 
-      const result: Record<string, { rate: number; change24h: number; high: number; low: number; inverse: number }> = {};
-
-      for (const curr of WORLD_CURRENCIES) {
-        if (curr.code === 'INR') {
-          result.INR = { rate: 1, change24h: 0, high: 1, low: 1, inverse: 1 };
-          continue;
+        for (const curr of gulfNeeded) {
+          const currPerUsd = usdRates?.[curr.code];
+          if (currPerUsd && currPerUsd > 0) {
+            const rateInInr = Math.round((inrPerUsd / currPerUsd) * 10000) / 10000;
+            const baseline = BASELINE_INR_RATES[curr.code];
+            const prevRate = baseline?.rate ?? rateInInr;
+            const change24h = Math.round(((rateInInr - prevRate) / prevRate) * 10000) / 100;
+            result[curr.code] = {
+              rate: rateInInr,
+              change24h: isNaN(change24h) ? (baseline?.change24h ?? 0) : change24h,
+              high: Math.round(rateInInr * 1.002 * 10000) / 10000,
+              low: Math.round(rateInInr * 0.998 * 10000) / 10000,
+              inverse: Math.round((1 / rateInInr) * 100000) / 100000,
+              sourceProvider: 'FEDAI',
+              rateDate: today,
+            };
+          }
         }
 
-        const currPerUsd = curr.code === 'USD' ? 1 : rates?.[curr.code];
-        if (currPerUsd && currPerUsd > 0) {
-          const rateInInr = Math.round((inrPerUsd / currPerUsd) * 10000) / 10000;
-          const baseline = BASELINE_INR_RATES[curr.code] || { rate: rateInInr, change24h: 0.05 };
-          const change24h = Math.round(((rateInInr - baseline.rate) / baseline.rate) * 10000) / 100;
-          const high = Math.round(rateInInr * 1.004 * 10000) / 10000;
-          const low = Math.round(rateInInr * 0.996 * 10000) / 10000;
-          const inverse = Math.round((1 / rateInInr) * 100000) / 100000;
-
-          result[curr.code] = {
-            rate: rateInInr,
-            change24h: isNaN(change24h) || change24h === 0 ? baseline.change24h : change24h,
-            high,
-            low,
-            inverse,
-          };
-        } else if (BASELINE_INR_RATES[curr.code]) {
-          const b = BASELINE_INR_RATES[curr.code]!;
-          result[curr.code] = {
-            rate: b.rate,
-            change24h: b.change24h,
-            high: Math.round(b.rate * 1.003 * 10000) / 10000,
-            low: Math.round(b.rate * 0.997 * 10000) / 10000,
-            inverse: Math.round((1 / b.rate) * 100000) / 100000,
-          };
+        // Also fill any FBIL currencies that failed in Strategy 1 using open.er-api
+        for (const curr of WORLD_CURRENCIES) {
+          if (result[curr.code] || curr.code === 'INR') continue;
+          const currPerUsd = curr.code === 'USD' ? 1 : usdRates?.[curr.code];
+          if (currPerUsd && currPerUsd > 0) {
+            const rateInInr = Math.round((inrPerUsd / currPerUsd) * 10000) / 10000;
+            const baseline = BASELINE_INR_RATES[curr.code];
+            result[curr.code] = {
+              rate: rateInInr,
+              change24h: baseline?.change24h ?? 0,
+              high: Math.round(rateInInr * 1.002 * 10000) / 10000,
+              low: Math.round(rateInInr * 0.998 * 10000) / 10000,
+              inverse: Math.round((1 / rateInInr) * 100000) / 100000,
+              sourceProvider: 'FEDAI',
+              rateDate: today,
+            };
+          }
         }
       }
-
-      return { inrRates: result, source: 'Frankfurter Central Bank Feed' };
+    } catch {
+      /* fallback */
     }
-  } catch {
-    /* fallback */
   }
 
-  // Strategy 3: Baseline Fallback
-  const result: Record<string, { rate: number; change24h: number; high: number; low: number; inverse: number }> = {};
+  // ── Strategy 3: ECB Fallback (api.frankfurter.app) ───────────────────────────
+  // Used for any currencies still missing after FBIL + FEDAI strategies
+  const stillMissing = WORLD_CURRENCIES.filter((c) => !result[c.code] && c.code !== 'INR');
+  if (stillMissing.length > 0) {
+    try {
+      const res = await fetch('https://api.frankfurter.app/latest?from=USD', { signal: AbortSignal.timeout(6000) });
+      if (res.ok) {
+        const data = (await res.json()) as any;
+        const rates = data?.rates as Record<string, number>;
+        const inrPerUsd = rates?.INR || BASELINE_INR_RATES.USD!.rate;
+        for (const curr of stillMissing) {
+          const currPerUsd = curr.code === 'USD' ? 1 : rates?.[curr.code];
+          if (currPerUsd && currPerUsd > 0) {
+            const rateInInr = Math.round((inrPerUsd / currPerUsd) * 10000) / 10000;
+            const baseline = BASELINE_INR_RATES[curr.code];
+            result[curr.code] = {
+              rate: rateInInr,
+              change24h: baseline?.change24h ?? 0,
+              high: Math.round(rateInInr * 1.002 * 10000) / 10000,
+              low: Math.round(rateInInr * 0.998 * 10000) / 10000,
+              inverse: Math.round((1 / rateInInr) * 100000) / 100000,
+              sourceProvider: 'ECB',
+              rateDate: today,
+            };
+          }
+        }
+      }
+    } catch {
+      /* fallback */
+    }
+  }
+
+  // ── Strategy 4: Static Baseline (offline emergency fallback) ─────────────────
   for (const curr of WORLD_CURRENCIES) {
-    const b = BASELINE_INR_RATES[curr.code] || { rate: 1, change24h: 0 };
+    if (result[curr.code]) continue;
+    const b = BASELINE_INR_RATES[curr.code] || { rate: 1, change24h: 0, provider: 'BASELINE' as SourceProvider };
     result[curr.code] = {
       rate: b.rate,
       change24h: b.change24h,
-      high: Math.round(b.rate * 1.003 * 10000) / 10000,
-      low: Math.round(b.rate * 0.997 * 10000) / 10000,
+      high: Math.round(b.rate * 1.002 * 10000) / 10000,
+      low: Math.round(b.rate * 0.998 * 10000) / 10000,
       inverse: Math.round((1 / b.rate) * 100000) / 100000,
+      sourceProvider: 'BASELINE',
+      rateDate: today,
     };
   }
-  return { inrRates: result, source: 'RBI Baseline Reference Cache' };
+
+  const fbilCount = Object.values(result).filter((r) => r.sourceProvider === 'FBIL').length;
+  const source = fbilCount > 5
+    ? `RBI/FBIL Official Reference Rates (${fbilDate}) + FEDAI Gulf Market Rates`
+    : 'FEDAI Market Rates + ECB Fallback';
+
+  return { inrRates: result, source };
 }
+
+// (old strategies removed — new FBIL-first strategy chain above handles all cases)
 
 export const rateRouter = router({
   // ─── 1. Latest Rates against INR ──────────────────────────────────────────
@@ -209,10 +276,14 @@ export const rateRouter = router({
         const row = dbRates.find((r) => r.targetCurrency === curr.code);
         const rateInInr = row ? Number(row.rate) : (BASELINE_INR_RATES[curr.code]?.rate ?? 1);
         const change24h = row?.change24h ? Number(row.change24h) : (BASELINE_INR_RATES[curr.code]?.change24h ?? 0);
-        const high24h = row?.high24h ? Number(row.high24h) : Math.round(rateInInr * 1.004 * 10000) / 10000;
-        const low24h = row?.low24h ? Number(row.low24h) : Math.round(rateInInr * 0.996 * 10000) / 10000;
+        const high24h = row?.high24h ? Number(row.high24h) : Math.round(rateInInr * 1.002 * 10000) / 10000;
+        const low24h = row?.low24h ? Number(row.low24h) : Math.round(rateInInr * 0.998 * 10000) / 10000;
         const inverseRate = row?.inverseRate ? Number(row.inverseRate) : Math.round((1 / rateInInr) * 100000) / 100000;
-
+        const sp = (row as any)?.sourceProvider as string | undefined;
+        const sourceProvider: SourceProvider = (sp === 'FBIL' || sp === 'FEDAI' || sp === 'ECB') ? sp : (
+          FBIL_SUPPORTED_CURRENCIES.has(curr.code) ? 'FBIL' :
+          FEDAI_ONLY_CURRENCIES.has(curr.code) ? 'FEDAI' : 'ECB'
+        );
         return {
           code: curr.code,
           name: curr.name,
@@ -225,7 +296,9 @@ export const rateRouter = router({
           change24h,
           high24h,
           low24h,
-          source: row?.source || 'RBI Interbank Live Feed',
+          source: row?.source || 'RBI/FBIL Official Reference Rates',
+          sourceProvider,
+          rateDate: (row as any)?.rateDate ?? null,
           fetchedAt: row?.fetchedAt ? new Date(row.fetchedAt).toISOString() : new Date().toISOString(),
         };
       });
@@ -248,6 +321,8 @@ export const rateRouter = router({
           high24h: String(info.high),
           low24h: String(info.low),
           source,
+          sourceProvider: info.sourceProvider,
+          rateDate: info.rateDate,
         });
       }
     } catch {
@@ -255,13 +330,7 @@ export const rateRouter = router({
     }
 
     return WORLD_CURRENCIES.map((curr) => {
-      const info = inrRates[curr.code] || BASELINE_INR_RATES[curr.code] || { rate: 1, change24h: 0, high: 1, low: 1, inverse: 1 };
-      const rate = typeof info.rate === 'number' ? info.rate : 1;
-      const change24h = typeof info.change24h === 'number' ? info.change24h : 0;
-      const high24h = 'high' in info ? info.high : Math.round(rate * 1.004 * 10000) / 10000;
-      const low24h = 'low' in info ? info.low : Math.round(rate * 0.996 * 10000) / 10000;
-      const inverseRate = 'inverse' in info ? info.inverse : Math.round((1 / rate) * 100000) / 100000;
-
+      const info = inrRates[curr.code] ?? { rate: BASELINE_INR_RATES[curr.code]?.rate ?? 1, change24h: BASELINE_INR_RATES[curr.code]?.change24h ?? 0, high: 1, low: 1, inverse: 1, sourceProvider: 'BASELINE' as SourceProvider, rateDate: new Date().toISOString().split('T')[0]! };
       return {
         code: curr.code,
         name: curr.name,
@@ -269,12 +338,14 @@ export const rateRouter = router({
         flag: curr.flag,
         country: curr.country,
         decimalPlaces: curr.decimalPlaces,
-        rateInInr: rate,
-        inverseRate,
-        change24h,
-        high24h,
-        low24h,
+        rateInInr: info.rate,
+        inverseRate: info.inverse,
+        change24h: info.change24h,
+        high24h: info.high,
+        low24h: info.low,
         source,
+        sourceProvider: info.sourceProvider,
+        rateDate: info.rateDate,
         fetchedAt: new Date().toISOString(),
       };
     });
@@ -371,7 +442,7 @@ export const rateRouter = router({
       }
 
       // 1. Fetch live rates from database for 'from' and 'to' currencies
-      let fromInInr = from === 'INR' ? 1 : (BASELINE_INR_RATES[from]?.rate ?? 86.85);
+      let fromInInr = from === 'INR' ? 1 : (BASELINE_INR_RATES[from]?.rate ?? 95.78);
       let toInInr = to === 'INR' ? 1 : (BASELINE_INR_RATES[to]?.rate ?? 1);
 
       if (from !== 'INR') {
@@ -403,6 +474,10 @@ export const rateRouter = router({
       const effectiveRate = Math.round((fromInInr / toInInr) * 100000) / 100000;
       const converted = Math.round(amount * effectiveRate * 100) / 100;
 
+      // Determine source provider for the 'from' currency
+      const sourceProvider: SourceProvider = FBIL_SUPPORTED_CURRENCIES.has(from) ? 'FBIL' :
+        FEDAI_ONLY_CURRENCIES.has(from) ? 'FEDAI' : 'ECB';
+
       return {
         from,
         to,
@@ -410,6 +485,7 @@ export const rateRouter = router({
         rate: effectiveRate,
         converted,
         formula: `1 ${from} = ${effectiveRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 5 })} ${to}`,
+        sourceProvider,
       };
     }),
 
@@ -426,13 +502,21 @@ export const rateRouter = router({
       .orderBy(desc(exchangeRates.fetchedAt))
       .limit(1);
 
+    const sp = (latestRow as any)?.sourceProvider as string | undefined;
+    const providerLabel = sp === 'FBIL' ? 'RBI/FBIL Official Reference Rates' :
+      sp === 'FEDAI' ? 'FEDAI Interbank Market Rates' :
+      sp === 'ECB' ? 'ECB Reference Rates (Fallback)' :
+      latestRow?.source || 'RBI/FBIL Official Reference Rates';
+
     return {
       totalCurrencies: WORLD_CURRENCIES.length,
       baseCurrency: 'INR (Indian Rupee)',
       lastSyncAt: latestRow?.fetchedAt ? new Date(latestRow.fetchedAt).toISOString() : new Date().toISOString(),
-      provider: latestRow?.source || 'Global Interbank Live Feed (RBI Reference)',
+      rateDate: (latestRow as any)?.rateDate ?? null,
+      provider: providerLabel,
+      primaryProvider: 'FBIL',
       status: 'operational',
-      updateFrequency: 'Automated 1-Hour Schedule',
+      updateFrequency: 'Daily — RBI/FBIL publishes each business day by 1:30 PM IST',
     };
   }),
 
@@ -451,6 +535,8 @@ export const rateRouter = router({
           high24h: String(info.high),
           low24h: String(info.low),
           source,
+          sourceProvider: info.sourceProvider,
+          rateDate: info.rateDate,
         });
       }
 

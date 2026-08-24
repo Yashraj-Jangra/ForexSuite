@@ -33,13 +33,14 @@ type BusinessProfile = {
   disclaimer1?: string; disclaimer2?: string;
 };
 
-type ForexLine = {
+interface ForexLine {
   currencyCode: string;
   currencyName: string;
   sacCode: string;
   amountForeign: string;
   exchangeRate: string;
   amountInr: number;
+  rateSource?: string; // 'FBIL' | 'FEDAI' | 'ECB' | undefined (manual)
 };
 
 type ExportLine = { description: string; hsnCode: string; gstRate: number; quantity: number; unitPrice: number; };
@@ -199,16 +200,17 @@ export default function NewInvoicePage() {
     }
   }
 
-  // Auto-fetch exchange rate for a forex line
+  // Auto-fetch exchange rate for a forex line (from RBI/FBIL or FEDAI source)
   async function fetchRate(idx: number, code: string) {
     try {
       const res = await fetch(`/api/trpc/rates.convert?input=${encodeURIComponent(JSON.stringify({ from: code, to: 'INR', amount: 1 }))}`, { credentials: 'include' });
       const j = await res.json();
       const rate = j?.result?.data?.rate ?? j?.result?.data?.convertedAmount;
+      const sp: string | undefined = j?.result?.data?.sourceProvider;
       if (rate) {
         setForexLines(lines => {
           const updated = [...lines];
-          updated[idx] = { ...updated[idx]!, exchangeRate: String(rate) };
+          updated[idx] = { ...updated[idx]!, exchangeRate: String(rate), rateSource: sp };
           return recalcLine(updated, idx);
         });
       }
@@ -524,10 +526,19 @@ export default function NewInvoicePage() {
                   <div className="col-span-2 space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-[10px] font-semibold text-muted-foreground uppercase">Rate (₹)</label>
-                      <button onClick={() => fetchRate(idx, line.currencyCode)} className="text-[9px] text-accent hover:underline">Fetch</button>
+                      <button onClick={() => fetchRate(idx, line.currencyCode)} className="text-[9px] text-accent hover:underline">Fetch RBI/FBIL</button>
                     </div>
                     <Input type="number" value={line.exchangeRate} onChange={e => updateForexLine(idx, 'exchangeRate', e.target.value)}
                       placeholder="112.50" className="h-7 text-xs font-mono" />
+                    {line.rateSource && (
+                      <span className={`text-[9px] font-bold ${
+                        line.rateSource === 'FBIL' ? 'text-emerald-400' :
+                        line.rateSource === 'FEDAI' ? 'text-amber-400' : 'text-blue-400'
+                      }`}>
+                        {line.rateSource === 'FBIL' ? '🔴 RBI/FBIL Official' :
+                         line.rateSource === 'FEDAI' ? '🟠 FEDAI Market Rate' : '🔵 ECB Reference'}
+                      </span>
+                    )}
                   </div>
                   {/* INR Equivalent */}
                   <div className="col-span-12 flex items-center justify-end gap-2 pt-1">

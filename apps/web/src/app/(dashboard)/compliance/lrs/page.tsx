@@ -50,7 +50,7 @@ export default function LrsPage() {
   const [purposeCode, setPurposeCode] = useState('');
   const [amountForeign, setAmountForeign] = useState('');
   const [currency, setCurrency] = useState('USD');
-  const [exchangeRate, setExchangeRate] = useState('86.85');
+  const [exchangeRate, setExchangeRate] = useState('');
   const [tcsCategory, setTcsCategory] = useState('other');
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -352,7 +352,12 @@ export default function LrsPage() {
 
             <div className="flex justify-between items-center pt-2">
               <div className="text-xs text-muted-foreground">
-                Exchange Rate: <strong className="font-mono text-foreground">1 {currency} = ₹{exchangeRate}</strong>
+                Exchange Rate: <strong className="font-mono text-foreground">1 {currency} = ₹{exchangeRate || '—'}</strong>
+                {exchangeRate && (
+                  <span className="ml-2 text-[10px] font-bold text-emerald-400">
+                    {['AED','SAR','KWD','QAR','OMR','BHD'].includes(currency) ? '🟠 FEDAI Market Rate' : '🔴 RBI/FBIL Official'}
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>

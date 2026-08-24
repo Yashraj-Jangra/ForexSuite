@@ -1,5 +1,32 @@
 # todo.md — VaultBill Project Tracker
 
+## Session 9 — 2026-08-24 (RBI/FBIL Official Exchange Rate Compliance Engine & Audit Infrastructure)
+
+### ✅ Completed — RBI/FBIL Statutory Reference Rates & Source Transparency
+- **DB Schema & Telemetry Migration (`packages/db`)**:
+  - Added `sourceProvider` (`FBIL | FEDAI | ECB | BASELINE`) and `rateDate` columns with indexing to `exchange_rates` table.
+  - Successfully migrated database schema with `drizzle-kit push`.
+- **FBIL-First 4-Tier Synchronization Engine (`apps/api`)**:
+  - **Tier 1 (Authoritative Primary)**: `https://api.frankfurter.dev/v1/latest?from=INR&providers=FBIL` pulling daily reference rates computed by Financial Benchmarks India Ltd (FBIL) per RBI mandate (covers USD, EUR, GBP, JPY, AUD, CAD, CHF, SGD, NZD, MYR, THB, HKD, SEK, NOK, DKK, TRY, CNY, ZAR).
+  - **Tier 2 (FEDAI Interbank)**: `https://open.er-api.com/v6/latest/USD` for Gulf pairs not published by FBIL (AED, SAR, KWD, QAR, OMR, BHD) adhering to FEMA Rule 7 / FEDAI guidelines.
+  - **Tier 3 (ECB Resilience)**: Fallback European Central Bank rates.
+  - **Tier 4 (Offline Baseline)**: Resilient static cache fallback.
+- **Forex Studio & Provider Filter Matrix (`apps/web/src/app/(dashboard)/settings/rates/page.tsx`)**:
+  - Interactive source tabs: `All Sources`, `🔴 RBI/FBIL`, `🟠 FEDAI`, `🔵 ECB`.
+  - Color-coded source badges and rate vintage dates on every currency row.
+  - Statutory compliance panel detailing RBI/FBIL reference mandate vs FEDAI interbank distinction with direct links to `fbil.org.in` and `RBI Reference Rate Archive`.
+- **Site-Wide Currency Rate Integration & Transparency**:
+  - **Invoices (`invoices/new/page.tsx`)**: Auto-fetches live RBI/FBIL or FEDAI rates and renders source verification pill.
+  - **LRS Compliance (`compliance/lrs/page.tsx`)**: Removed hardcoded `'86.85'` fallback; dynamic conversion with `🔴 RBI/FBIL Official` / `🟠 FEDAI` source tags.
+  - **Dashboard (`dashboard/page.tsx`)**: Upgraded live ticker with source indicator dots and updated subtitle copy.
+  - **Landing Page (`page.tsx`)**: Sourcing FAQ and features updated to reflect statutory RBI/FBIL daily reference rates.
+  - **Background Worker (`apps/worker/src/jobs/rate-sync.ts`)**: Upgraded to FBIL-first dual-strategy syncing.
+- **Verification & Local Commits**:
+  - All packages (`@vaultbill/api`, `@vaultbill/web`, `@vaultbill/db`, `@vaultbill/worker`) compile with 0 errors.
+  - Browser subagent verified filtering, source indicators, and live sync execution.
+
+---
+
 ## Session 8 — 2026-08-24 (Exchange Rates Engine, Live Forex Studio & Historical Charts)
 
 ### ✅ Completed — Exchange Rates Accuracy & Live Sync Studio

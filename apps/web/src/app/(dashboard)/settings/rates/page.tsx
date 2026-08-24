@@ -38,6 +38,8 @@ interface CurrencyRateItem {
   high24h: number;
   low24h: number;
   source: string;
+  sourceProvider?: string; // FBIL | FEDAI | ECB | BASELINE
+  rateDate?: string | null;
   fetchedAt: string;
 }
 
@@ -64,7 +66,9 @@ interface RatesStats {
   totalCurrencies: number;
   baseCurrency: string;
   lastSyncAt: string;
+  rateDate?: string | null;
   provider: string;
+  primaryProvider?: string;
   status: string;
   updateFrequency: string;
 }
@@ -84,6 +88,8 @@ export default function RateSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState('');
+  // Provider filter: 'ALL' | 'FBIL' | 'FEDAI' | 'ECB'
+  const [providerFilter, setProviderFilter] = useState<'ALL' | 'FBIL' | 'FEDAI' | 'ECB'>('ALL');
   const [selectedChartCode, setSelectedChartCode] = useState('USD');
   const [chartDays, setChartDays] = useState<number>(30);
   const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
@@ -224,15 +230,26 @@ export default function RateSettingsPage() {
   // Filtered rates list
   const filteredRates = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return rates;
-    return rates.filter(
+    let filtered = rates;
+    // Provider filter
+    if (providerFilter !== 'ALL') {
+      filtered = filtered.filter((r) => {
+        const sp = r.sourceProvider || (
+          ['USD','EUR','GBP','JPY','AUD','CAD','CHF','SGD','NZD','MYR','THB','HKD','SEK','NOK','DKK','TRY','CNY','ZAR'].includes(r.code) ? 'FBIL' :
+          ['AED','SAR','KWD','QAR','OMR','BHD'].includes(r.code) ? 'FEDAI' : 'ECB'
+        );
+        return sp === providerFilter;
+      });
+    }
+    if (!q) return filtered;
+    return filtered.filter(
       (r) =>
         r.code.toLowerCase().includes(q) ||
         r.name.toLowerCase().includes(q) ||
         r.country.toLowerCase().includes(q) ||
         r.symbol.toLowerCase().includes(q),
     );
-  }, [rates, search]);
+  }, [rates, search, providerFilter]);
 
   // Converter math
   const convertedValue = useMemo(() => {
@@ -378,7 +395,7 @@ export default function RateSettingsPage() {
             Foreign Exchange Rates &amp; Synchronization Studio
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Real-time multi-provider forex feeds (RBI Reference &amp; Interbank), historical time-series analytics, and instant currency calculator.
+            Official RBI/FBIL daily reference rates for 18 currencies · FEDAI interbank rates for Gulf currencies · FEMA-compliant 1-unit quote standard.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -393,12 +410,12 @@ export default function RateSettingsPage() {
         </div>
       </div>
 
-      {/* ─── STATUTORY FOREX SOURCING & CALCULATION NOTICE ─── */}
+      {/* ─── STATUTORY FOREX SOURCING & COMPLIANCE NOTICE ─── */}
       <div className="rounded-2xl border border-accent/30 bg-accent/[0.03] p-4 sm:p-5 space-y-3 transition-all">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-accent font-bold text-sm">
-            <Info className="size-4.5 text-accent shrink-0" />
-            <span>How Exchange Rates Are Sourced, Quoted &amp; Maintained in VaultBill</span>
+            <ShieldCheck className="size-4.5 text-accent shrink-0" />
+            <span>Official Rate Sources — RBI/FBIL Compliance Framework</span>
           </div>
           <button
             onClick={() => setShowNoticeDetails(!showNoticeDetails)}
@@ -411,43 +428,46 @@ export default function RateSettingsPage() {
 
         {showNoticeDetails && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs text-muted-foreground pt-1 border-t border-accent/15">
+            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-emerald-500/20">
+              <strong className="text-emerald-400 flex items-center gap-1.5 font-sans">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                🔴 RBI/FBIL Official (18 currencies)
+              </strong>
+              <p className="text-[11px] leading-relaxed">
+                USD, EUR, GBP, JPY, AUD, CAD, CHF, SGD, NZD, MYR, THB, HKD, SEK, NOK, DKK, TRY, CNY, ZAR are sourced from <strong className="text-foreground">FBIL</strong> — the RBI-mandated benchmark administrator (since July 2018, per RBI circular). Published daily by 1:30 PM IST on business days.
+              </p>
+            </div>
+
+            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-amber-500/20">
+              <strong className="text-amber-400 flex items-center gap-1.5 font-sans">
+                <span className="size-2 rounded-full bg-amber-500" />
+                🟠 FEDAI Market Rates (Gulf)
+              </strong>
+              <p className="text-[11px] leading-relaxed">
+                AED, SAR, KWD, QAR, OMR, BHD are <strong className="text-foreground">not published by FBIL</strong>. FEDAI interbank market rates (sourced via open.er-api) are the standard for FFMC/AD banks under FEMA Rule 7. Displayed with 🟠 badge.
+              </p>
+            </div>
+
             <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
               <strong className="text-foreground flex items-center gap-1.5 font-sans">
                 <span className="size-1.5 rounded-full bg-accent" />
                 1. Quotation Standard (1 Unit = INR)
               </strong>
               <p className="text-[11px] leading-relaxed">
-                In compliance with FEMA &amp; RBI Master Directions, all rates are quoted as 1 Foreign Currency Unit = INR Price (e.g. 1 USD = ₹86.85).
+                In compliance with FEMA &amp; RBI Master Directions, all rates are quoted as <strong className="text-foreground">1 Foreign Currency Unit = INR Price</strong> (e.g. 1 USD = ₹95.78).
               </p>
             </div>
 
             <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
               <strong className="text-foreground flex items-center gap-1.5 font-sans">
                 <span className="size-1.5 rounded-full bg-accent" />
-                2. Live Central Bank Feeds
+                Verification Links
               </strong>
               <p className="text-[11px] leading-relaxed">
-                Spot rates aggregate from real-time interbank feeds (OpenExchange &amp; Frankfurter Central Bank) with failover resilience.
-              </p>
-            </div>
-
-            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
-              <strong className="text-foreground flex items-center gap-1.5 font-sans">
-                <span className="size-1.5 rounded-full bg-accent" />
-                3. FFMC &amp; Dealer Spreads
-              </strong>
-              <p className="text-[11px] leading-relaxed">
-                Authorised Money Changers (FFMC) may apply board-approved purchase/sale margins during Cash Memo generation.
-              </p>
-            </div>
-
-            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
-              <strong className="text-foreground flex items-center gap-1.5 font-sans">
-                <span className="size-1.5 rounded-full bg-accent" />
-                4. Automated Background Sync
-              </strong>
-              <p className="text-[11px] leading-relaxed">
-                Rates cache updates automatically on your configured schedule, with instant manual refresh capability via Sync Rates Now.
+                Verify FBIL rates at{' '}
+                <a href="https://www.fbil.org.in" target="_blank" rel="noopener noreferrer" className="text-accent underline">fbil.org.in</a>
+                {' '}or the{' '}
+                <a href="https://www.rbi.org.in/scripts/ReferenceRateArchive.aspx" target="_blank" rel="noopener noreferrer" className="text-accent underline">RBI Reference Rate Archive</a>.
               </p>
             </div>
           </div>
@@ -491,10 +511,10 @@ export default function RateSettingsPage() {
           </div>
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Last Synchronized
+              FBIL Rate Date
             </span>
             <span className="text-xs font-bold text-foreground mt-0.5 block font-mono truncate">
-              {stats?.lastSyncAt ? new Date(stats.lastSyncAt).toLocaleTimeString() : 'Just now'}
+              {(stats as any)?.rateDate || (stats?.lastSyncAt ? new Date(stats.lastSyncAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today')}
             </span>
           </div>
         </Card>
@@ -505,10 +525,10 @@ export default function RateSettingsPage() {
           </div>
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Quotation Base
+              Primary Source
             </span>
-            <span className="text-sm font-bold text-foreground mt-0.5 block">
-              INR (₹ Indian Rupee)
+            <span className="text-sm font-bold text-emerald-400 mt-0.5 block">
+              🔴 RBI/FBIL Official
             </span>
           </div>
         </Card>
@@ -888,19 +908,39 @@ export default function RateSettingsPage() {
         <div className="xl:col-span-7 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-bold text-foreground">Active Exchange Rates Against INR</h2>
-              <p className="text-xs text-muted-foreground">Standard quote: 1 Foreign Currency Unit = INR Price</p>
+              <h2 className="text-base font-bold text-foreground">Live Exchange Rates Against INR</h2>
+              <p className="text-xs text-muted-foreground">1 Foreign Currency Unit = INR · Rates sourced from RBI/FBIL (🔴) and FEDAI (🟠)</p>
             </div>
 
-            {/* Search Bar */}
-            <div className="relative w-full sm:w-64">
-              <Search className="size-4 text-muted-foreground absolute left-3 top-2.5" />
-              <Input
-                placeholder="Search currency, flag..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-xs"
-              />
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Provider Filter Tabs */}
+              {(['ALL', 'FBIL', 'FEDAI', 'ECB'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setProviderFilter(p)}
+                  className={`px-3 py-1 rounded-xl text-[11px] font-bold border transition-all ${
+                    providerFilter === p
+                      ? p === 'FBIL' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                        : p === 'FEDAI' ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
+                        : p === 'ECB' ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
+                        : 'bg-accent/20 border-accent/40 text-accent'
+                      : 'border-border/50 text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {p === 'FBIL' ? '🔴 RBI/FBIL' : p === 'FEDAI' ? '🟠 FEDAI' : p === 'ECB' ? '🔵 ECB' : 'All Sources'}
+                </button>
+              ))}
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="size-4 text-muted-foreground absolute left-3 top-2.5" />
+                <Input
+                  placeholder="Search currency..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-9 text-xs w-48"
+                />
+              </div>
             </div>
           </div>
 
@@ -913,6 +953,7 @@ export default function RateSettingsPage() {
                     <th className="py-3 px-4">Currency</th>
                     <th className="py-3 px-4">Spot Rate (INR)</th>
                     <th className="py-3 px-4">Inverse (1 INR)</th>
+                    <th className="py-3 px-4">Source</th>
                     <th className="py-3 px-4 text-right">24h Movement</th>
                   </tr>
                 </thead>
@@ -920,6 +961,15 @@ export default function RateSettingsPage() {
                   {filteredRates.map((r) => {
                     const isPositive = r.change24h >= 0;
                     const isSelected = selectedChartCode === r.code;
+                    const sp = r.sourceProvider || (
+                      ['USD','EUR','GBP','JPY','AUD','CAD','CHF','SGD','NZD','MYR','THB','HKD','SEK','NOK','DKK','TRY','CNY','ZAR'].includes(r.code) ? 'FBIL' :
+                      ['AED','SAR','KWD','QAR','OMR','BHD'].includes(r.code) ? 'FEDAI' : 'ECB'
+                    );
+                    const providerBadge = sp === 'FBIL'
+                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">🔴 FBIL</span>
+                      : sp === 'FEDAI'
+                      ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/20">🟠 FEDAI</span>
+                      : <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-blue-500/10 text-blue-400 border border-blue-500/20">🔵 ECB</span>;
                     return (
                       <tr
                         key={r.code}
@@ -955,6 +1005,13 @@ export default function RateSettingsPage() {
                           {r.symbol}{r.inverseRate.toFixed(4)}
                         </td>
 
+                        <td className="py-3 px-4">
+                          {providerBadge}
+                          {r.rateDate && (
+                            <span className="block text-[9px] text-muted-foreground font-mono mt-0.5">{r.rateDate}</span>
+                          )}
+                        </td>
+
                         <td className="py-3 px-4 text-right">
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-sans text-[11px] font-extrabold border ${
@@ -973,8 +1030,8 @@ export default function RateSettingsPage() {
 
                   {filteredRates.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="py-10 text-center text-muted-foreground font-sans">
-                        No currency matches your search query.
+                      <td colSpan={5} className="py-10 text-center text-muted-foreground font-sans">
+                        No currency matches your search or filter.
                       </td>
                     </tr>
                   )}

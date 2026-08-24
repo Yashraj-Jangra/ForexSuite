@@ -53,11 +53,15 @@ export const exchangeRates = pgTable('exchange_rates', {
   high24h: numeric('high_24h'),
   low24h: numeric('low_24h'),
   source: text('source').notNull(),
+  // Provider that sourced this rate: FBIL (RBI official), FEDAI (Gulf market), ECB (fallback), BASELINE (offline)
+  sourceProvider: text('source_provider').notNull().default('BASELINE'),
+  rateDate: text('rate_date'), // The official rate date from the source (e.g. FBIL publishes for a specific date)
   fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
 }, (table) => ({
   baseCurrencyIdx: index('exchange_rates_base_currency_idx').on(table.baseCurrency),
   targetCurrencyIdx: index('exchange_rates_target_currency_idx').on(table.targetCurrency),
   fetchedAtIdx: index('exchange_rates_fetched_at_idx').on(table.fetchedAt),
+  sourceProviderIdx: index('exchange_rates_source_provider_idx').on(table.sourceProvider),
 }));
 
 export const invoices = pgTable('invoices', {
