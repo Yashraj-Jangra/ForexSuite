@@ -20,6 +20,7 @@ type EdfRecord = {
   id: string;
   invoiceId: string | null;
   edfNumber: string | null;
+  softexNumber: string | null;
   financialYear: string;
   buyerName: string;
   buyerCountry: string;
@@ -30,6 +31,7 @@ type EdfRecord = {
   status: string;
   submittedAt: string | null;
   acknowledgedAt: string | null;
+  notes: string | null;
   createdAt: string;
 };
 

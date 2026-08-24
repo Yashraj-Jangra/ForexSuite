@@ -21,6 +21,7 @@ import {
   FileCheck2,
   ListOrdered,
   UserCog,
+  ShieldAlert,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
@@ -48,7 +49,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
   const { mode, setMode } = useTheme();
   const [complianceOpen, setComplianceOpen] = useState(true);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; isSuperAdmin?: boolean } | null>(null);
   const { profile: bizProfile } = useBusinessProfile();
 
   useEffect(() => {
@@ -250,6 +251,18 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <ShieldCheck className="size-4 shrink-0" />
             <span>Backups</span>
           </Link>
+
+          {user?.isSuperAdmin && (
+            <Link
+              href="/admin"
+              onClick={onClose}
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 mt-2"
+            >
+              <ShieldAlert className="size-4 shrink-0 text-rose-500" />
+              <span className="flex-1">Super Admin Ops</span>
+              <span className="size-2 rounded-full bg-rose-500 animate-ping" />
+            </Link>
+          )}
         </div>
       </nav>
 
