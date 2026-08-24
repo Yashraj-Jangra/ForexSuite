@@ -6,7 +6,6 @@ export function middleware(request: NextRequest) {
   const authPages = ['/login', '/signup', '/onboard'];
   const isAuthPage = authPages.some((p) => pathname === p);
   const isPublic =
-    isAuthPage ||
     pathname.startsWith('/api') ||
     pathname === '/' ||
     pathname.startsWith('/_next') ||
@@ -18,12 +17,19 @@ export function middleware(request: NextRequest) {
 
   if (isPublic) return NextResponse.next();
 
-  const sessionCookie = request.cookies.get('better-auth.session_token')?.value;
+  const sessionCookie =
+    request.cookies.get('better-auth.session_token')?.value ||
+    request.cookies.get('__Secure-better-auth.session_token')?.value;
 
+  // If already logged in and visiting login/signup, redirect to dashboard
+  if (sessionCookie && (pathname === '/login' || pathname === '/signup')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // If not logged in and accessing protected pages, redirect to login
   if (!sessionCookie && !isAuthPage) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
-
 
   return NextResponse.next();
 }
