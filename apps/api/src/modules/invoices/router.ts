@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { invoices, invoiceItems, customers, lutRegistrations, businessProfile } from '@vaultbill/db/schemas/tenant';
-import { eq, desc, like, and, gt } from 'drizzle-orm';
+import { eq, desc, like, and, gt, isNull } from 'drizzle-orm';
 import { getHsnRate } from '@vaultbill/shared';
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -140,31 +140,58 @@ export const invoiceRouter = router({
     .input(
       z.object({
         status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']).optional(),
+        includeDeleted: z.boolean().default(false),
         limit: z.number().int().max(100).default(50),
         offset: z.number().int().default(0),
       }).optional(),
     )
-    .query(({ ctx, input }) =>
-      ctx.db
+    .query(({ ctx, input }) => {
+      const conditions: any[] = [];
+      if (!input?.includeDeleted) {
+        conditions.push(isNull(invoices.deletedAt));
+      }
+      if (input?.status) {
+        conditions.push(eq(invoices.status, input.status));
+      }
+      return ctx.db
         .select()
         .from(invoices)
         .leftJoin(customers, eq(invoices.customerId, customers.id))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(invoices.createdAt))
         .limit(input?.limit ?? 50)
-        .offset(input?.offset ?? 0),
-    ),
+        .offset(input?.offset ?? 0);
+    }),
 
-  get: protectedProcedure.input(z.string().uuid()).query(async ({ ctx, input }) => {
-    const [inv] = await ctx.db
-      .select()
-      .from(invoices)
-      .leftJoin(customers, eq(invoices.customerId, customers.id))
-      .where(eq(invoices.id, input))
-      .limit(1);
-    if (!inv) return null;
-    const items = await ctx.db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, input));
-    return { ...inv, items };
-  }),
+  get: protectedProcedure
+    .input(
+      z.union([
+        z.string().uuid(),
+        z.object({
+          id: z.string().uuid(),
+          includeDeleted: z.boolean().default(false),
+        }),
+      ]),
+    )
+    .query(async ({ ctx, input }) => {
+      const id = typeof input === 'string' ? input : input.id;
+      const includeDeleted = typeof input === 'string' ? false : input.includeDeleted;
+
+      const conditions: any[] = [eq(invoices.id, id)];
+      if (!includeDeleted) {
+        conditions.push(isNull(invoices.deletedAt));
+      }
+
+      const [inv] = await ctx.db
+        .select()
+        .from(invoices)
+        .leftJoin(customers, eq(invoices.customerId, customers.id))
+        .where(and(...conditions))
+        .limit(1);
+      if (!inv) return null;
+      const items = await ctx.db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+      return { ...inv, items };
+    }),
 
   create: protectedProcedure
     .input(createInvoiceInput)

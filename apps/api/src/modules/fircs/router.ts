@@ -1,11 +1,32 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { fircs, invoices } from '@vaultbill/db/schemas/tenant';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
+
+const fircInputSchema = z.object({
+  fircNumber: z.string().min(1),
+  issuingBank: z.string().min(1),
+  dateOfIssuance: z.string(),
+  amount: z.coerce.number().positive(),
+  currency: z.string().length(3),
+  exchangeRate: z.coerce.number().positive().optional(),
+  amountInr: z.coerce.number().optional(),
+  purposeCode: z.string().optional(),
+  pdfPath: z.string().optional(),
+  // e-FIRC & EDPMS fields
+  eFircReference: z.string().optional(),
+  adBankName: z.string().optional(),
+  remitterName: z.string().optional(),
+  shortRealizationFlag: z.boolean().default(false),
+  shortRealizationAmount: z.coerce.number().optional(),
+  shortRealizationReason: z.string().optional(),
+  compoundingRequired: z.boolean().default(false),
+  edpmsStatus: z.enum(['pending', 'reported', 'closed']).default('pending'),
+});
 
 export const fircRouter = router({
   list: protectedProcedure.query(({ ctx }) =>
-    ctx.db.select().from(fircs).orderBy(fircs.dateOfIssuance).limit(200),
+    ctx.db.select().from(fircs).orderBy(desc(fircs.dateOfIssuance)).limit(200),
   ),
 
   get: protectedProcedure.input(z.string().uuid()).query(({ ctx, input }) =>
@@ -13,17 +34,7 @@ export const fircRouter = router({
   ),
 
   create: protectedProcedure
-    .input(z.object({
-      fircNumber: z.string().min(1),
-      issuingBank: z.string().min(1),
-      dateOfIssuance: z.string(),
-      amount: z.coerce.number().positive(),
-      currency: z.string().length(3),
-      exchangeRate: z.coerce.number().positive().optional(),
-      amountInr: z.coerce.number().optional(),
-      purposeCode: z.string().optional(),
-      pdfPath: z.string().optional(),
-    }))
+    .input(fircInputSchema)
     .mutation(({ ctx, input }) => {
       const unmapped = input.amountInr ?? input.amount;
       return ctx.db.insert(fircs).values({
@@ -37,7 +48,40 @@ export const fircRouter = router({
         purposeCode: input.purposeCode ?? null,
         pdfPath: input.pdfPath ?? null,
         unmappedAmountInr: String(unmapped),
+        eFircReference: input.eFircReference ?? null,
+        adBankName: input.adBankName ?? null,
+        remitterName: input.remitterName ?? null,
+        shortRealizationFlag: input.shortRealizationFlag,
+        shortRealizationAmount: input.shortRealizationAmount ? String(input.shortRealizationAmount) : null,
+        shortRealizationReason: input.shortRealizationReason ?? null,
+        compoundingRequired: input.compoundingRequired,
+        edpmsStatus: input.edpmsStatus,
       }).returning().then((r) => r[0]);
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        data: fircInputSchema.partial(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, data } = input;
+      const updates: any = { updatedAt: new Date() };
+
+      for (const [k, v] of Object.entries(data)) {
+        if (v !== undefined) {
+          updates[k] = typeof v === 'number' ? String(v) : v;
+        }
+      }
+
+      return ctx.db
+        .update(fircs)
+        .set(updates)
+        .where(eq(fircs.id, id))
+        .returning()
+        .then((r) => r[0]);
     }),
 
   linkInvoice: protectedProcedure
