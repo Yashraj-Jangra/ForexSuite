@@ -8,6 +8,8 @@ import {
   integer,
   date,
   index,
+  jsonb,
+  bigint,
 } from 'drizzle-orm/pg-core';
 
 export const customers = pgTable('customers', {
@@ -91,6 +93,8 @@ export const invoices = pgTable('invoices', {
   disclaimer2: text('disclaimer2'),
   issuedAt: timestamp('issued_at').defaultNow().notNull(),
   dueAt: timestamp('due_at'),
+  // Soft delete — financial records must never be hard-deleted (FEMA 5-year retention)
+  deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -147,6 +151,11 @@ export const lutRegistrations = pgTable('lut_registrations', {
   issuingAuthority: text('issuing_authority').notNull(),
   pdfPath: text('pdf_path'),
   isActive: boolean('is_active').default(true).notNull(),
+  // GST portal acknowledgment (Form RFD-11)
+  gstPortalAckNumber: text('gst_portal_ack_number'),
+  financialYear: text('financial_year'),            // e.g. '2025-26'
+  autoRenewReminder: boolean('auto_renew_reminder').default(true),
+  reminderSentAt: timestamp('reminder_sent_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -163,6 +172,15 @@ export const fircs = pgTable('fircs', {
   purposeCode: text('purpose_code'),
   pdfPath: text('pdf_path'),
   unmappedAmountInr: numeric('unmapped_amount_inr'),
+  // e-FIRC / EDPMS fields (FEMA 2026 compliance)
+  eFircReference: text('e_firc_reference'),         // EDPMS reference number
+  adBankName: text('ad_bank_name'),                 // Authorized Dealer bank
+  remitterName: text('remitter_name'),              // Foreign sender name
+  shortRealizationFlag: boolean('short_realization_flag').default(false),
+  shortRealizationAmount: numeric('short_realization_amount'),
+  shortRealizationReason: text('short_realization_reason'), // 'bank_charges' | 'rate_difference' | 'other'
+  compoundingRequired: boolean('compounding_required').default(false),
+  edpmsStatus: text('edpms_status').default('pending'), // 'pending' | 'reported' | 'closed'
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -210,6 +228,13 @@ export const forexTransactions = pgTable('forex_transactions', {
   conversionRate: numeric('conversion_rate'),
   customerName: text('customer_name'),
   customerPassportKyc: text('customer_passport_kyc'),
+  // Extended KYC + FLM register fields (RBI FFMC compliance)
+  customerPassportExpiry: date('customer_passport_expiry'),
+  customerPan: text('customer_pan'),
+  transactionSlipNumber: text('transaction_slip_number'), // Sequential slip for FLM-2/3
+  denominationDetails: jsonb('denomination_details'),     // [{denomination:50, count:10, amount:500}]
+  isRectified: boolean('is_rectified').default(false),    // Correction entry marker for FLM
+  verifiedById: uuid('verified_by_id'),                   // User who verified (for multi-user)
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
@@ -260,3 +285,119 @@ export const businessProfile = pgTable('business_profile', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
+// ─── Email Settings ───────────────────────────────────────────────────────────
+// Stores per-tenant email delivery config: VaultBill-hosted / Gmail OAuth / custom SMTP
+export const emailSettings = pgTable('email_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  mode: text('mode').notNull().default('vaultbill'), // 'vaultbill' | 'gmail_oauth' | 'smtp'
+  // Gmail OAuth (tokens encrypted AES-256-GCM server-side)
+  gmailAccessToken: text('gmail_access_token'),
+  gmailRefreshToken: text('gmail_refresh_token'),
+  gmailEmail: text('gmail_email'),
+  // Custom SMTP (password encrypted AES-256-GCM)
+  smtpHost: text('smtp_host'),
+  smtpPort: integer('smtp_port').default(587),
+  smtpUser: text('smtp_user'),
+  smtpPass: text('smtp_pass'),      // stored encrypted
+  smtpFromName: text('smtp_from_name'),
+  smtpFromEmail: text('smtp_from_email'),
+  smtpSecure: boolean('smtp_secure').default(false),
+  // Last test send status
+  lastTestAt: timestamp('last_test_at'),
+  lastTestStatus: text('last_test_status'), // 'ok' | 'failed'
+  lastTestError: text('last_test_error'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Backup Configuration ─────────────────────────────────────────────────────
+export const backupConfig = pgTable('backup_config', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  scheduleInterval: text('schedule_interval').default('4h'), // '4h' | '12h' | '24h'
+  retentionDays: integer('retention_days').default(90),
+  // Google Drive destination
+  gdriveEnabled: boolean('gdrive_enabled').default(false),
+  gdriveTokens: text('gdrive_tokens'),     // encrypted JSON {access_token, refresh_token}
+  gdriveFolderId: text('gdrive_folder_id'),
+  gdriveEmail: text('gdrive_email'),
+  // S3 / MinIO destination
+  s3Enabled: boolean('s3_enabled').default(false),
+  s3Bucket: text('s3_bucket'),
+  s3AccessKey: text('s3_access_key'),
+  s3SecretKey: text('s3_secret_key'),      // encrypted
+  s3Region: text('s3_region').default('ap-south-1'),
+  s3Endpoint: text('s3_endpoint'),         // for MinIO custom endpoints
+  // Status
+  lastBackupAt: timestamp('last_backup_at'),
+  lastBackupStatus: text('last_backup_status'), // 'success' | 'failed'
+  lastBackupError: text('last_backup_error'),
+  lastBackupSizeBytes: bigint('last_backup_size_bytes', { mode: 'number' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+// FEMA requires 5-year retention of all financial records and their change history
+export const auditLog = pgTable('audit_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(), // 'invoice'|'firc'|'customer'|'remittance'|'lut'|'forex_transaction'|'edf'
+  entityId: text('entity_id').notNull(),
+  action: text('action').notNull(),          // 'created'|'updated'|'status_changed'|'matched'|'exported'|'deleted'
+  userId: text('user_id'),                   // null = system job
+  diff: jsonb('diff'),                       // { before: {...}, after: {...} }
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  meta: jsonb('meta'),                       // extra context (e.g. matched FIRC ref, status transition)
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  entityTypeIdx: index('audit_log_entity_type_idx').on(table.entityType),
+  entityIdIdx: index('audit_log_entity_id_idx').on(table.entityId),
+  createdAtIdx: index('audit_log_created_at_idx').on(table.createdAt),
+}));
+
+// ─── EDF Records (SOFTEX replacement — mandatory from Oct 1, 2026) ────────────
+export const edfRecords = pgTable('edf_records', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  invoiceId: uuid('invoice_id').references(() => invoices.id),
+  edfNumber: text('edf_number'),             // EDF reference assigned by AD bank
+  financialYear: text('financial_year').notNull(), // '2026-27'
+  buyerName: text('buyer_name').notNull(),
+  buyerCountry: text('buyer_country').notNull(),
+  buyerAddress: text('buyer_address'),
+  purposeCode: text('purpose_code').notNull(), // e.g. 'P0802'
+  amountForeign: numeric('amount_foreign').notNull(),
+  currency: text('currency').notNull(),
+  amountInr: numeric('amount_inr'),
+  adBankName: text('ad_bank_name'),           // Authorized Dealer bank
+  adBranchCity: text('ad_branch_city'),
+  softexNumber: text('softex_number'),        // Legacy SOFTEX ref if migrating old records
+  status: text('status').notNull().default('draft'), // 'draft'|'submitted'|'acknowledged'|'closed'
+  submittedAt: timestamp('submitted_at'),
+  acknowledgedAt: timestamp('acknowledged_at'),
+  pdfPath: text('pdf_path'),                  // Uploaded signed EDF PDF
+  notes: text('notes'),
+  deletedAt: timestamp('deleted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  invoiceIdIdx: index('edf_records_invoice_id_idx').on(table.invoiceId),
+  statusIdx: index('edf_records_status_idx').on(table.status),
+}));
+
+// ─── Tenant Members (multi-user per tenant) ───────────────────────────────────
+export const tenantMembers = pgTable('tenant_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: text('tenant_id').notNull(),
+  userId: text('user_id').notNull(),           // FK → public.user (better-auth)
+  role: text('role').notNull().default('viewer'), // 'owner'|'admin'|'accountant'|'viewer'
+  inviteStatus: text('invite_status').notNull().default('pending'), // 'pending'|'accepted'
+  inviteToken: text('invite_token'),
+  inviteEmail: text('invite_email'),
+  invitedAt: timestamp('invited_at').defaultNow().notNull(),
+  joinedAt: timestamp('joined_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  tenantUserIdx: index('tenant_members_tenant_user_idx').on(table.tenantId, table.userId),
+}));

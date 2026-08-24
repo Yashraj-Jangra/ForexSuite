@@ -305,15 +305,62 @@ export const invoiceRouter = router({
 
   updateStatus: protectedProcedure
     .input(z.object({ id: z.string().uuid(), status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']) }))
-    .mutation(({ ctx, input }) =>
-      ctx.db.update(invoices).set({ status: input.status, updatedAt: new Date() }).where(eq(invoices.id, input.id)).returning().then((r) => r[0]),
-    ),
+    .mutation(async ({ ctx, input }) => {
+      // Fetch current invoice status for validation
+      const [existing] = await ctx.db
+        .select({ status: invoices.status })
+        .from(invoices)
+        .where(eq(invoices.id, input.id))
+        .limit(1);
 
+      if (!existing) {
+        throw new (await import('@trpc/server')).TRPCError({ code: 'NOT_FOUND', message: 'Invoice not found' });
+      }
+
+      const { TRPCError } = await import('@trpc/server');
+
+      // Once paid or cancelled, the invoice is fully immutable
+      if (existing.status === 'paid' || existing.status === 'cancelled') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `Invoice is ${existing.status} and fully immutable. No further changes are allowed.`,
+        });
+      }
+
+      return ctx.db
+        .update(invoices)
+        .set({ status: input.status, updatedAt: new Date() })
+        .where(eq(invoices.id, input.id))
+        .returning()
+        .then((r) => r[0]);
+    }),
+
+  // Soft-delete only — FEMA mandates 5-year retention of financial records
   delete: protectedProcedure.input(z.string().uuid()).mutation(async ({ ctx, input }) => {
-    const result = await ctx.db.transaction(async (tx) => {
-      await tx.delete(invoiceItems).where(eq(invoiceItems.invoiceId, input));
-      return tx.delete(invoices).where(eq(invoices.id, input));
-    });
-    return { deleted: result.rowCount ?? 0 };
+    const [existing] = await ctx.db
+      .select({ status: invoices.status })
+      .from(invoices)
+      .where(eq(invoices.id, input))
+      .limit(1);
+
+    const { TRPCError } = await import('@trpc/server');
+
+    if (!existing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Invoice not found' });
+
+    // Cannot delete finalized invoices
+    if (existing.status === 'sent' || existing.status === 'paid') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Finalized invoices cannot be deleted. Cancel the invoice first.',
+      });
+    }
+
+    // Soft delete: set deletedAt timestamp, keep all data
+    await ctx.db
+      .update(invoices)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(invoices.id, input));
+
+    return { deleted: true };
   }),
 });

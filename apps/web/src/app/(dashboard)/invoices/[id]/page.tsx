@@ -17,6 +17,7 @@ import {
   ScrollText,
   ShieldCheck,
   CreditCard,
+  Lock,
 } from 'lucide-react';
 
 type InvoiceDetail = {
@@ -124,9 +125,26 @@ export default function InvoiceDetailPage() {
   }
 
   const { invoices: inv, customers: cust, items } = invoice;
+  const isFinalized = inv.status === 'paid' || inv.status === 'cancelled';
+  const isSent = inv.status === 'sent';
 
   return (
     <Container size="md" className="space-y-6">
+      {/* Freeze Banner */}
+      {(isFinalized || isSent) && (
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-semibold ${
+          isFinalized
+            ? 'bg-muted/60 border-border text-muted-foreground'
+            : 'bg-blue-500/5 border-blue-500/20 text-blue-500'
+        }`}>
+          <Lock className="size-4 shrink-0" />
+          <span>
+            {isFinalized
+              ? `This invoice is ${inv.status.toUpperCase()} — all fields are permanently locked and cannot be modified.`
+              : 'This invoice has been sent. Line items and amounts are locked. You can still mark it Paid or Cancel.'}
+          </span>
+        </div>
+      )}
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -147,23 +165,23 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons — hidden for fully finalized invoices */}
         <div className="flex flex-wrap items-center gap-2">
-          {inv.status !== 'sent' && inv.status !== 'paid' && (
+          {!isFinalized && inv.status !== 'sent' && (
             <Button size="sm" variant="outline" onClick={() => updateStatus('sent')} disabled={updating} className="gap-1.5 text-xs">
               <Send className="size-3.5" />
               <span>Mark Sent</span>
             </Button>
           )}
 
-          {inv.status !== 'paid' && (
+          {!isFinalized && (
             <Button size="sm" onClick={() => updateStatus('paid')} disabled={updating} className="gap-1.5 text-xs bg-green-600 hover:bg-green-700 text-white">
               <CheckCircle className="size-3.5" />
               <span>Mark Paid</span>
             </Button>
           )}
 
-          {inv.status !== 'cancelled' && (
+          {!isFinalized && (
             <Button size="sm" variant="outline" onClick={() => updateStatus('cancelled')} disabled={updating} className="gap-1.5 text-xs text-red-400 hover:text-red-300">
               <XCircle className="size-3.5" />
               <span>Cancel</span>

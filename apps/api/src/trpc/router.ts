@@ -20,6 +20,9 @@ import { forexRouter } from '../modules/forex/router';
 import { notificationRouter } from '../modules/notifications/router';
 import { settingsRouter } from '../modules/settings/router';
 import { businessProfileRouter } from '../modules/business-profile/router';
+import { edfRouter } from '../modules/edf/router';
+import { emailRouter } from '../modules/email/router';
+import { backupRouter } from '../modules/backups/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -80,6 +83,9 @@ export const appRouter = router({
   notifications: notificationRouter,
   settings: settingsRouter,
   businessProfile: businessProfileRouter,
+  edf: edfRouter,
+  email: emailRouter,
+  backups: backupRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -18,10 +18,14 @@ import {
   Moon,
   Sun,
   ChevronDown,
+  FileCheck2,
+  ListOrdered,
+  UserCog,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useTheme } from '@/providers/ThemeProvider';
+import { useBusinessProfile } from '@/context/business-profile-context';
 
 const MAIN_NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -35,6 +39,8 @@ const COMPLIANCE_NAV = [
   { href: '/compliance/firc', label: 'FIRC Manager', icon: Landmark },
   { href: '/compliance/lut', label: 'LUT Registry', icon: ScrollText },
   { href: '/compliance/flm8', label: 'FLM-8 Return', icon: ShieldCheck },
+  { href: '/compliance/flm1-7', label: 'FLM Registers', icon: ListOrdered },
+  { href: '/compliance/edf', label: 'EDF / SOFTEX', icon: FileCheck2, badge: 'NEW' },
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
@@ -43,21 +49,13 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { mode, setMode } = useTheme();
   const [complianceOpen, setComplianceOpen] = useState(true);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-  const [tenant, setTenant] = useState<{ name: string; slug: string } | null>(null);
+  const { profile: bizProfile } = useBusinessProfile();
 
   useEffect(() => {
     fetch('/api/trpc/me', { credentials: 'include' })
       .then((r) => r.json())
       .then((j) => {
         if (j?.result?.data) setUser(j.result.data);
-      })
-      .catch(() => { });
-
-    fetch('/api/trpc/tenants', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((j) => {
-        const list = j?.result?.data || [];
-        if (list[0]?.tenants) setTenant(list[0].tenants);
       })
       .catch(() => { });
   }, []);
@@ -67,23 +65,44 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     router.push('/login');
   }
 
+  // Company initials for fallback avatar
+  const initials = bizProfile?.companyName
+    ? bizProfile.companyName.trim().slice(0, 2).toUpperCase()
+    : null;
+
   return (
     <aside className="flex h-full w-64 flex-col bg-card border-r border-border select-none">
       {/* Brand Header */}
       <div className="p-5 pb-4">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="size-8 rounded-xl bg-accent text-white flex items-center justify-center shadow-sm">
-            <VaultBillLogo className="size-5" />
-          </div>
-          <div>
+          {/* Company logo or initials avatar */}
+          {bizProfile?.logoBase64 ? (
+            <img
+              src={bizProfile.logoBase64}
+              alt={bizProfile.companyName || 'Logo'}
+              className="h-8 max-w-[36px] object-contain rounded-lg"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+          ) : initials ? (
+            <div className="size-8 rounded-xl bg-accent/20 text-accent font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
+              {initials}
+            </div>
+          ) : (
+            <div className="size-8 rounded-xl bg-accent text-white flex items-center justify-center shadow-sm">
+              <VaultBillLogo className="size-5" />
+            </div>
+          )}
+          <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm tracking-tight text-foreground">VaultBill</span>
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-accent/10 text-accent">
-                Fintech
+              <span className="font-bold text-sm tracking-tight text-foreground truncate max-w-[120px]">
+                {bizProfile?.companyName || 'VaultBill'}
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-accent/10 text-accent shrink-0">
+                Suite
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground truncate max-w-[140px]">
-              {tenant?.name || 'Invoicing Suite'}
+              {bizProfile?.gstin ? `GSTIN: ${bizProfile.gstin}` : 'Multi-Currency'}
             </p>
           </div>
         </Link>
@@ -133,7 +152,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
           {complianceOpen && (
             <div className="space-y-0.5 pt-0.5">
-              {COMPLIANCE_NAV.map(({ href, label, icon: Icon }) => {
+              {COMPLIANCE_NAV.map(({ href, label, icon: Icon, badge }: { href: string; label: string; icon: React.ElementType; badge?: string }) => {
                 const active = pathname.startsWith(href);
                 return (
                   <Link
@@ -148,7 +167,12 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                     )}
                   >
                     <Icon className="size-4 shrink-0" />
-                    <span>{label}</span>
+                    <span className="flex-1">{label}</span>
+                    {badge && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                        {badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -186,6 +210,45 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           >
             <Building2 className="size-4 shrink-0" />
             <span>Business Profile</span>
+          </Link>
+          <Link
+            href="/settings/email"
+            onClick={onClose}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all',
+              pathname.startsWith('/settings/email')
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
+            )}
+          >
+            <ScrollText className="size-4 shrink-0" />
+            <span>Email Settings</span>
+          </Link>
+          <Link
+            href="/settings/team"
+            onClick={onClose}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all',
+              pathname.startsWith('/settings/team')
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
+            )}
+          >
+            <UserCog className="size-4 shrink-0" />
+            <span>Team & Access</span>
+          </Link>
+          <Link
+            href="/settings/backups"
+            onClick={onClose}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all',
+              pathname.startsWith('/settings/backups')
+                ? 'bg-accent text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
+            )}
+          >
+            <ShieldCheck className="size-4 shrink-0" />
+            <span>Backups</span>
           </Link>
         </div>
       </nav>
