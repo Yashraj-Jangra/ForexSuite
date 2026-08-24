@@ -23,6 +23,7 @@
   - Commit: `🐛 fix chart hover and display area alignment with native svg tooltip coordinates`
   - Commit: `🎨 add dual-axis XY coordinate crosshairs and high-precision matrix hover HUD to rates chart`
   - Commit: `🐛 fix rates sync mutation permissions and payload parsing`
+  - Commit: `🎨 polish rates chart tooltip spacing, typography hierarchy, and remove raw XY labels`
 
 ---
 
