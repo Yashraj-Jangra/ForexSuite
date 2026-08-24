@@ -19,6 +19,7 @@
 - **Verification & Local Commits**:
   - `@vaultbill/api`, `@vaultbill/web`, `@vaultbill/db` typechecks passing with 0 errors.
   - Commit: `✨ overhaul exchange rates engine with live sync, 30d history charts, and dashboard ticker`
+  - Commit: `🎨 polish rates trend chart with theme tokens, hover crosshair tooltips, and sourcing notes`
 
 ---
 
