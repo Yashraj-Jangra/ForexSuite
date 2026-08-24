@@ -20,13 +20,12 @@ import {
   LogOut,
   Menu,
   X,
-  ShieldCheck,
-  AlertTriangle,
   ExternalLink,
   Zap,
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { useTheme } from '@/providers/ThemeProvider';
+import { Illustration } from '@/components/ui/illustration';
 
 const ADMIN_NAV = [
   { href: '/admin', label: 'Overview & KPIs', icon: LayoutDashboard, exact: true },
@@ -97,9 +96,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   if (checking) {
     return (
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-white space-y-4">
-        <div className="size-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center animate-pulse">
-          <ShieldAlert className="size-6 text-rose-500" />
-        </div>
+        <Illustration name="securityShield" size="sm" float />
         <p className="text-sm font-semibold tracking-wider text-neutral-300">Authenticating Super Admin session...</p>
       </div>
     );
@@ -109,8 +106,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     return (
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4 text-center">
         <div className="max-w-md w-full bg-neutral-900 border border-rose-500/30 rounded-2xl p-8 space-y-5 shadow-2xl">
-          <div className="size-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400">
-            <AlertTriangle className="size-7" />
+          <div className="py-2">
+            <Illustration name="securityShield" size="md" className="mx-auto" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">Restricted Area</h1>

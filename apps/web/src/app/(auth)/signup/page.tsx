@@ -7,12 +7,12 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VaultBillLogo } from '@/components/ui/logo';
+import { Illustration } from '@/components/ui/illustration';
 import { useTheme } from '@/providers/ThemeProvider';
 import {
   Mail,
   Lock,
   ArrowRight,
-  ShieldCheck,
   Eye,
   EyeOff,
   Moon,
@@ -20,10 +20,8 @@ import {
   Building2,
   User,
   Sparkles,
-  Check,
   ShieldAlert,
   Zap,
-  Globe2,
   LockKeyhole,
 } from 'lucide-react';
 
@@ -82,9 +80,7 @@ export default function SignupPage() {
   if (authChecking) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
-        <div className="size-12 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center animate-pulse">
-          <VaultBillLogo className="size-6 text-accent" />
-        </div>
+        <Illustration name="connectedWorld" size="sm" float />
         <p className="text-xs font-semibold text-muted-foreground tracking-wider">
           Checking active workspace session...
         </p>
@@ -268,10 +264,14 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Center Showcase Mockup Cards */}
-        <div className="relative z-10 my-auto max-w-lg mx-auto w-full space-y-4">
-          {/* Card 1: 5 PDF Design Archetypes Showcase */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-3">
+        {/* Center Showcase Graphic & Badges */}
+        <div className="relative z-10 my-auto max-w-lg mx-auto w-full space-y-6 text-center">
+          <div className="py-2">
+            <Illustration name="connectedWorld" size="lg" className="mx-auto drop-shadow-2xl" />
+          </div>
+
+          {/* Card: 5 PDF Design Archetypes Showcase */}
+          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-3 text-left">
             <div className="flex items-center justify-between text-xs text-white font-bold border-b border-white/10 pb-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="size-4 text-accent" />
@@ -283,43 +283,21 @@ export default function SignupPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5 space-y-0.5">
                 <span className="font-bold block text-white">Modern Minimalist</span>
                 <span className="text-[10px] text-white/50 block">Sleek fintech layout with right-aligned summary card.</span>
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5 space-y-0.5">
                 <span className="font-bold block text-white">Executive Slate</span>
                 <span className="text-[10px] text-white/50 block">Tier-1 banking header band with dual-tone grid.</span>
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5 space-y-0.5">
                 <span className="font-bold block text-white">Classic Heritage</span>
                 <span className="text-[10px] text-white/50 block">Traditional double-border FFMC money changer look.</span>
               </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
+              <div className="p-2 rounded-xl bg-white/[0.03] border border-white/5 space-y-0.5">
                 <span className="font-bold block text-white">Clean Monochrome</span>
                 <span className="text-[10px] text-white/50 block">Swiss typography, zero color fills for thermal printing.</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Security & Statutory Guarantee */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-2.5">
-            <div className="flex items-center gap-2 text-white text-xs font-bold">
-              <ShieldCheck className="size-4 text-emerald-400" />
-              <span>Full Statutory Regulatory Compliance</span>
-            </div>
-            <div className="space-y-1.5 text-[11px] text-white/70">
-              <div className="flex items-center gap-2">
-                <Check className="size-3.5 text-accent" />
-                <span>Automated TCS 20% / 7% LRS annual threshold calculation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="size-3.5 text-accent" />
-                <span>GST RFD-11 LUT Registry &amp; 30-day renewal warnings</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="size-3.5 text-accent" />
-                <span>e-FIRC reference, AD Bank &amp; EDPMS reconciliation</span>
               </div>
             </div>
           </div>

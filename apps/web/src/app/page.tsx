@@ -102,9 +102,9 @@ export default function Home() {
 
             {/* hero illustration */}
             <Illustration
-              name="hero"
-              alt=""
-              className="mt-16 mx-auto max-w-sm w-full animate-float-slow"
+              name="visionaryTech"
+              alt="VaultBill Suite"
+              className="mt-16 mx-auto max-w-md w-full animate-float-slow"
             />
           </Container>
         </section>
@@ -174,7 +174,7 @@ export default function Home() {
                 )}
               </article>
             ))}
-            <Illustration name="dashboard" alt="" className="absolute bottom-0 sm:hidden max-w-xs w-full" />
+            <Illustration name="visualData" alt="" className="absolute bottom-0 sm:hidden max-w-xs w-full" />
           </section>
         </Container>
 

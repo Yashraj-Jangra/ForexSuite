@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
+import { Illustration } from '@/components/ui/illustration';
 import {
   FileText,
   Plus,
@@ -266,9 +267,9 @@ export default function InvoicesPage() {
               {filteredInvoices.length === 0 && !loading && (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-muted-foreground">
-                    <FileText className="size-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm font-semibold">No invoices match your filter</p>
-                    <p className="text-xs mt-0.5">Try clearing your search query or creating a new invoice.</p>
+                    <Illustration name="documentReady" size="md" className="mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-foreground">No invoices found</p>
+                    <p className="text-xs mt-1 text-muted-foreground">Try adjusting your filters or generate a new Cash Memo.</p>
                   </td>
                 </tr>
               )}

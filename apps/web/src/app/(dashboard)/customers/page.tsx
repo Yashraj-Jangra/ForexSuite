@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
+import { Illustration } from '@/components/ui/illustration';
 import {
   Users,
   Plus,
@@ -529,10 +530,12 @@ export default function CustomersPage() {
         ))}
 
         {filteredCustomers.length === 0 && !loading && (
-          <Card padding="lg" className="col-span-full py-12 text-center text-muted-foreground space-y-2">
-            <Users className="size-8 mx-auto opacity-40" />
-            <p className="text-sm font-semibold">No customers found</p>
-            <p className="text-xs">Add foreign or domestic clients to start creating multi-currency invoices.</p>
+          <Card padding="lg" className="col-span-full py-12 text-center text-muted-foreground space-y-3">
+            <Illustration name="customers" size="md" className="mx-auto" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">No client profiles found</p>
+              <p className="text-xs mt-1 text-muted-foreground">Register foreign or domestic clients to start generating compliant Cash Memos.</p>
+            </div>
           </Card>
         )}
       </div>

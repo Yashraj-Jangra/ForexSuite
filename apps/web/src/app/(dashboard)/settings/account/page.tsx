@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
 import { useTrpcClient } from '@/providers/TrpcProvider';
+import { Illustration } from '@/components/ui/illustration';
 import {
   User,
   Mail,
@@ -59,6 +60,17 @@ const ROLE_BADGES: Record<string, { label: string; color: string }> = {
   viewer: { label: 'Read-Only Viewer', color: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20' },
   member: { label: 'Team Member', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
 };
+
+const AVATAR_PRESETS: { id: string; label: string; name: any }[] = [
+  { id: 'dev', label: 'Developer', name: 'avatarDev' },
+  { id: 'prowoman', label: 'Executive', name: 'avatarProWoman' },
+  { id: 'hacker', label: 'Builder', name: 'avatarHacker' },
+  { id: 'guy', label: 'Associate', name: 'avatarGuy' },
+  { id: 'coolgirl', label: 'Creative', name: 'avatarCoolGirl' },
+  { id: 'thinker', label: 'Analyst', name: 'avatarThinker' },
+  { id: 'female', label: 'Manager', name: 'avatarFemale' },
+  { id: 'stylish', label: 'Partner', name: 'avatarStylish' },
+];
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -139,18 +151,20 @@ export default function AccountSettingsPage() {
 
       if (accData) {
         setAccount(accData);
-        setName(accData.name || '');
-        setEmail(accData.email || '');
-        setPhone(accData.phone || '');
-        setDesignation(accData.designation || '');
-        setImage(accData.image || null);
+        setName(accData.name ?? '');
+        setEmail(accData.email ?? '');
+        setPhone(accData.phone ?? '');
+        setDesignation(accData.designation ?? '');
+        setImage(accData.image ?? null);
       }
-
-      setSessions(sessList || []);
-    } catch (err: any) {
-      showToast(err?.message || 'Failed to load profile', false);
+      if (Array.isArray(sessList)) {
+        setSessions(sessList);
+      }
+    } catch {
+      showToast('Failed to load profile details.', false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -158,44 +172,49 @@ export default function AccountSettingsPage() {
   }, []);
 
   function handleAvatarUpload(file: File) {
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Avatar photo must be under 2MB.', false);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setImage(result);
+      const b64 = e.target?.result as string;
+      setImage(b64);
     };
     reader.readAsDataURL(file);
   }
 
-  async function handleSaveProfile(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSaveProfile(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     setSaving(true);
     try {
       await trpc.account.update.mutate({
-        name: name.trim(),
+        name: name.trim() || undefined,
         phone: phone.trim() || null,
         designation: designation.trim() || null,
         image: image || null,
       });
 
-      showToast('Account details updated successfully', true);
+      showToast('Profile updated successfully!', true);
       await loadData();
     } catch (err: any) {
-      showToast(err?.message || 'Failed to update account', false);
+      showToast(err?.message || 'Failed to update profile info.', false);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   async function handleRevokeSession(sessionId: string) {
     try {
-      await trpc.account.revokeSession.mutate(sessionId);
-      showToast('Session terminated', true);
-      loadData();
+      await trpc.account.revokeSession.mutate({ sessionId });
+      showToast('Session terminated successfully.', true);
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
     } catch (err: any) {
-      showToast(err?.message || 'Failed to terminate session', false);
+      showToast(err?.message || 'Failed to terminate session.', false);
     }
   }
 
-  const roleInfo = (account?.role && ROLE_BADGES[account.role]) ? ROLE_BADGES[account.role]! : ROLE_BADGES['member']!;
+  const roleInfo = ROLE_BADGES[account?.role || 'member'] ?? ROLE_BADGES.member!;
 
   const initials = (name || account?.name)
     ? (name || account?.name || '')
@@ -240,7 +259,7 @@ export default function AccountSettingsPage() {
       </div>
 
       {/* ─── SECTION 1: USER IDENTITY HERO CARD ─── */}
-      <Card padding="lg" className="border-accent/30 bg-accent/5">
+      <Card padding="lg" className="border-accent/30 bg-accent/5 space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           {/* Avatar Upload */}
           <div className="relative group shrink-0">
@@ -299,6 +318,26 @@ export default function AccountSettingsPage() {
                 <span>{designation}</span>
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Preset Avatar Fast Picker */}
+        <div className="pt-3 border-t border-border/50">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+            Quick Avatar Presets
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {AVATAR_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setImage(`/illustrations/${p.name === 'avatarDev' ? 'developer-avatar_f6ac.svg' : p.name === 'avatarProWoman' ? 'professional-woman-avatar_ivds.svg' : p.name === 'avatarHacker' ? 'indie-hacker-avatar_b3wy.svg' : p.name === 'avatarGuy' ? 'friendly-guy-avatar_dqp5.svg' : p.name === 'avatarCoolGirl' ? 'cool-girl-avatar_fifz.svg' : p.name === 'avatarThinker' ? 'deep-thinker-avatar_6xg6.svg' : p.name === 'avatarFemale' ? 'female-avatar_7t6k.svg' : 'stylish-girl-avatar_m8po.svg'}`)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-border/60 hover:border-accent bg-card/60 hover:bg-card text-xs font-semibold transition-all"
+              >
+                <Illustration name={p.name} size="avatar" className="size-5" />
+                <span>{p.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </Card>

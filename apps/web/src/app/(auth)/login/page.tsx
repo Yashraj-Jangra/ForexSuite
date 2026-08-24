@@ -7,23 +7,19 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VaultBillLogo } from '@/components/ui/logo';
+import { Illustration } from '@/components/ui/illustration';
 import { useTheme } from '@/providers/ThemeProvider';
 import {
   Mail,
   Lock,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
-  Sparkles,
   Eye,
   EyeOff,
   Moon,
   Sun,
-  Globe2,
-  TrendingUp,
-  FileCheck2,
+  Sparkles,
   LockKeyhole,
-  Check,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -78,9 +74,7 @@ export default function LoginPage() {
   if (authChecking) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center space-y-4">
-        <div className="size-12 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center animate-pulse">
-          <VaultBillLogo className="size-6 text-accent" />
-        </div>
+        <Illustration name="secureLogin" size="sm" float />
         <p className="text-xs font-semibold text-muted-foreground tracking-wider">
           Checking active workspace session...
         </p>
@@ -90,7 +84,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col lg:flex-row">
-      {/* ─── LEFT PANE: AUTHENTICATION FORM (45% on widescreen) ─── */}
+      {/* ─── LEFT PANE: AUTHENTICATION FORM (48% on widescreen) ─── */}
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-10 lg:p-14 max-w-2xl mx-auto w-full lg:max-w-none lg:w-[48%]">
         {/* Top Bar: Brand & Theme Switcher */}
         <div className="flex items-center justify-between">
@@ -248,67 +242,36 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Center Showcase Mockup Cards */}
-        <div className="relative z-10 my-auto max-w-lg mx-auto w-full space-y-4">
-          {/* Glass Card 1: Forex Rates Live Widget */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-3">
-            <div className="flex items-center justify-between text-xs text-white/60 font-semibold border-b border-white/10 pb-2">
-              <div className="flex items-center gap-2 text-white">
-                <Globe2 className="size-4 text-accent" />
-                <span>Forex Rates &amp; Cash Memo Engine</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Live Feed
+        {/* Center Showcase Graphic & Mockups */}
+        <div className="relative z-10 my-auto max-w-lg mx-auto w-full space-y-6 text-center">
+          <div className="py-2">
+            <Illustration name="secureLogin" size="lg" className="mx-auto drop-shadow-2xl" />
+          </div>
+
+          {/* Glass Card: 5-Pillar Statutory Compliance Seal */}
+          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-3 text-left">
+            <div className="flex items-center justify-between text-xs text-white font-bold border-b border-white/10 pb-2">
+              <span>Full Statutory Regulatory Automation</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">
+                Bank-Grade
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-white">
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                <span className="text-[10px] text-white/50 block font-mono">USD / INR</span>
-                <span className="text-sm font-bold block">₹86.45</span>
-                <span className="text-[9px] text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="size-2.5" /> +0.12%
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                <span className="text-[10px] text-white/50 block font-mono">GBP / INR</span>
-                <span className="text-sm font-bold block">₹111.20</span>
-                <span className="text-[9px] text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="size-2.5" /> +0.08%
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 space-y-1">
-                <span className="text-[10px] text-white/50 block font-mono">EUR / INR</span>
-                <span className="text-sm font-bold block">₹93.80</span>
-                <span className="text-[9px] text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="size-2.5" /> +0.05%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Glass Card 2: 5-Pillar Compliance Grid */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl shadow-2xl space-y-3">
-            <div className="flex items-center gap-2 text-white text-xs font-bold">
-              <FileCheck2 className="size-4 text-emerald-400" />
-              <span>Full Statutory Regulatory Automation</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                <Check className="size-3.5 text-accent" />
+            <div className="grid grid-cols-2 gap-2.5 text-[11px] text-white/80">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03]">
+                <span className="size-1.5 rounded-full bg-accent" />
                 <span>FLM-1 to FLM-8 RBI Registers</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                <Check className="size-3.5 text-accent" />
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03]">
+                <span className="size-1.5 rounded-full bg-accent" />
                 <span>LRS Form A2 &amp; TCS 20% Math</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                <Check className="size-3.5 text-accent" />
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03]">
+                <span className="size-1.5 rounded-full bg-accent" />
                 <span>e-FIRC &amp; EDPMS Matching</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02]">
-                <Check className="size-3.5 text-accent" />
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.03]">
+                <span className="size-1.5 rounded-full bg-accent" />
                 <span>5 Multi-Style PDF Templates</span>
               </div>
             </div>
