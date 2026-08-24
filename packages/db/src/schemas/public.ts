@@ -32,8 +32,9 @@ export const tenants = pgTable('tenants', {
 
 export const tenantMembers = pgTable('tenant_members', {
   id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: text('tenant_id')
-    .notNull(),
+  tenantId: uuid('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
   userId: text('user_id')
     .references(() => user.id, { onDelete: 'cascade' }),
   role: text('role').notNull().default('member'),
