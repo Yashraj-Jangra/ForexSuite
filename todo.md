@@ -21,6 +21,7 @@
   - Commit: `✨ overhaul exchange rates engine with live sync, 30d history charts, and dashboard ticker`
   - Commit: `🎨 polish rates trend chart with theme tokens, hover crosshair tooltips, and sourcing notes`
   - Commit: `🐛 fix chart hover and display area alignment with native svg tooltip coordinates`
+  - Commit: `🎨 add dual-axis XY coordinate crosshairs and high-precision matrix hover HUD to rates chart`
 
 ---
 
