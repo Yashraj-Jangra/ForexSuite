@@ -1,29 +1,16 @@
 # todo.md — VaultBill Project Tracker
 
-## Session 6 — 2026-08-24 (Personal Account Management, Telemetry & Session Control)
+## Session 7 — 2026-08-24 (Split-Screen Auth Redesign & Auto-Redirect Engine)
 
-### ✅ Completed — Account Management & Security
+### ✅ Completed — Authentication Overhaul & Visual Showcase
 
-#### Database & Schema (`packages/db`)
-- Added `phone`, `designation`, and `lastLoginAt` columns to `user` table in `auth.ts`.
-- Synchronized schema via `drizzle-kit push` (`[✓] Changes applied`).
-
-#### Backend API (`apps/api`)
-- Created `accountRouter` (`apps/api/src/modules/account/router.ts`) with:
-  - `account.get`: Returns consolidated user profile (Name, Email, Phone, Designation, Avatar, Role, Super Admin status, Workspace Joined Date, Last Accessed timestamp, IP address, and browser User Agent).
-  - `account.update`: Allows updating legal name, phone number, job designation, and avatar photo.
-  - `account.sessions`: Lists all active login sessions sorted chronologically.
-  - `account.revokeSession`: Terminates remote device sessions.
-- Registered `account: accountRouter` in `appRouter`.
-
-#### Frontend UI (`apps/web`)
-- Created [`/settings/account`](file:///d:/Projects/Currency%20Manager/apps/web/src/app/(dashboard)/settings/account/page.tsx):
-  - User identity hero card with role badge, verified email pill, and avatar upload.
-  - Profile edit form for legal name, phone number, and designation.
-  - Access timeline snapshot (Last accessed relative time, IP & device parse, creation & workspace join dates).
-  - Active device session manager with one-click remote session termination.
-- Linked user footer pill in [`Sidebar.tsx`](file:///d:/Projects/Currency%20Manager/apps/web/src/components/Sidebar.tsx) directly to `/settings/account`.
-- Added **Account & Security** card to [`/settings`](file:///d:/Projects/Currency%20Manager/apps/web/src/app/(dashboard)/settings/page.tsx).
+#### Authentication Redesign & UX (`apps/web`)
+- **Split-Screen Layout**:
+  - **Form Pane (48% width)**: Clean modern inputs, password visibility toggle (Eye/EyeOff), remember-me checkbox, error banners, theme mode toggle, and smooth routing.
+  - **Showcase Pane (52% width)**: Deep neutral charcoal/slate gradient backdrop, live Forex Rates ticker card (USD, GBP, EUR), 5-Pillar Statutory Compliance Seal (FLM-1 to FLM-8, LRS Form A2, e-FIRC & EDPMS, 5 PDF Archetypes), and 256-bit encryption trust indicators.
+- **Automated Dashboard Redirect**:
+  - **Server-side (`middleware.ts`)**: Automatically redirects authenticated users with active session cookies from `/login` and `/signup` to `/dashboard`.
+  - **Client-side (`login/page.tsx` & `signup/page.tsx`)**: Mounted auth probe via `/api/trpc/me` that smoothly pushes to `/dashboard` if an active session is detected.
 
 #### Verification & Typechecks
 - `@vaultbill/api`: `tsc --noEmit` → **0 errors (Exit 0)** ✅
@@ -31,11 +18,16 @@
 - `@vaultbill/db`: `tsc --noEmit` → **0 errors (Exit 0)** ✅
 
 #### Git History
-- Commit: `🗄️ add phone, designation, and last login columns to user schema and account router`
-- Commit: `✨ add personal account management, details telemetry, and session manager`
-- Commit: `🐛 fix account details fetching, profile update, and trpc client binding`
-- Commit: `🎨 redesign profile settings with widescreen side-by-side pdf studio and fix modal scroll`
-- Commit: `🗄️ align tenant_members.tenant_id to uuid foreign key`
+- Commit: `🎨 redesign auth login and signup with split-screen hero showcase and auto-redirect`
+
+---
+
+## Session 6 — 2026-08-24 (Personal Account Management, Telemetry & Session Control)
+- Personal Profile Management (Name, Email, Phone, Designation, Avatar)
+- Security Telemetry Snapshot (Last accessed time, IP, parsed device)
+- Active Login Sessions Manager with remote revocation
+- Widescreen Side-by-Side PDF Studio & Fullscreen Modal Scrolling Fix
+- Aligned `tenant_members.tenant_id` to UUID foreign key
 
 ---
 
@@ -44,14 +36,6 @@
 - Suite Customization & Color Swatches
 - Real-Time Live Preview Modal & Split Preview Window
 - Dark theme refined to neutral charcoal grey (`hsl(240 5% 9%)`)
-
----
-
-## Session 4 — 2026-08-24 (System Audit, Verification & Code Integrity Fixes)
-- Invoice Soft-Delete Isolation (`isNull(deletedAt)`)
-- Customer KYC Editing Modal with auto-fill
-- e-FIRC & EDPMS Reconciliation API & UI
-- LUT Registry Form GST RFD-11 Tracking
 
 ---
 
