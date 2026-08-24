@@ -22,6 +22,7 @@
   - Commit: `🎨 polish rates trend chart with theme tokens, hover crosshair tooltips, and sourcing notes`
   - Commit: `🐛 fix chart hover and display area alignment with native svg tooltip coordinates`
   - Commit: `🎨 add dual-axis XY coordinate crosshairs and high-precision matrix hover HUD to rates chart`
+  - Commit: `🐛 fix rates sync mutation permissions and payload parsing`
 
 ---
 
