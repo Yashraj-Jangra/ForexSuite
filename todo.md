@@ -35,6 +35,7 @@
 #### Git History
 - Commit: `🎨 add 5 customizable pdf invoice templates and rendering engine`
 - Commit: `✨ add invoice template visual picker and live preview to settings`
+- Commit: `🐛 fix invoice pdf preview rendering and screen modal positioning`
 
 ---
 
