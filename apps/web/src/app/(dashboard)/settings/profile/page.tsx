@@ -4,7 +4,21 @@ import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, Building2, FileText, Percent, Upload, AlertCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  Building2,
+  FileText,
+  Percent,
+  Upload,
+  AlertCircle,
+  Palette,
+  Eye,
+  X,
+  Sparkles,
+  RefreshCw,
+  Sliders,
+  Check,
+} from 'lucide-react';
 
 const INVOICE_FORMAT_PRESETS = [
   { label: 'INV-YY-0001', value: 'INV-{YY}-{SEQ}', preview: 'INV-26-0001' },
@@ -12,39 +26,141 @@ const INVOICE_FORMAT_PRESETS = [
   { label: 'Custom prefix (e.g. SP/0001)', value: 'SP/{SEQ}', preview: 'SP/0001' },
 ];
 
+export type InvoiceTemplateId = 'modern' | 'executive' | 'classic' | 'minimal' | 'corporate';
+
+const TEMPLATES: {
+  id: InvoiceTemplateId;
+  name: string;
+  badge: string;
+  description: string;
+  style: string;
+  previewHeaderBg: string;
+  previewBorder: string;
+}[] = [
+  {
+    id: 'modern',
+    name: 'Modern Minimalist',
+    badge: 'Recommended',
+    description: 'Clean fintech aesthetic, soft borders, subtle pill badges, right-aligned summary.',
+    style: 'Modern & Clean',
+    previewHeaderBg: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
+    previewBorder: 'border-blue-500',
+  },
+  {
+    id: 'executive',
+    name: 'Executive Slate',
+    badge: 'Authoritative',
+    description: 'Deep slate header band, dual-tone table grid, gold/accent highlights, corporate feel.',
+    style: 'Tier-1 Banking',
+    previewHeaderBg: 'bg-slate-900 border-slate-700 text-slate-200',
+    previewBorder: 'border-slate-500',
+  },
+  {
+    id: 'classic',
+    name: 'Classic Heritage FFMC',
+    badge: 'Traditional',
+    description: 'Traditional full-border box grid, formal serif accents, double-line rules, money-changer look.',
+    style: 'Classic Banking',
+    previewHeaderBg: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+    previewBorder: 'border-amber-500',
+  },
+  {
+    id: 'minimal',
+    name: 'Clean Monochrome',
+    badge: 'Zero Ink Waste',
+    description: 'High-contrast Swiss layout, sharp horizontal rules, zero color fills, ideal for thermal/laser printers.',
+    style: 'Swiss Monochrome',
+    previewHeaderBg: 'bg-neutral-800 border-neutral-700 text-neutral-300',
+    previewBorder: 'border-neutral-400',
+  },
+  {
+    id: 'corporate',
+    name: 'Neo Corporate',
+    badge: 'Contemporary',
+    description: 'Sleek accent top line, floating card sections, colored badges for SAC & purpose codes.',
+    style: 'Modern Enterprise',
+    previewHeaderBg: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
+    previewBorder: 'border-indigo-500',
+  },
+];
+
+const ACCENT_COLORS = [
+  { name: 'Sapphire Blue', hex: '#2563eb' },
+  { name: 'Executive Slate', hex: '#0f172a' },
+  { name: 'Emerald Green', hex: '#059669' },
+  { name: 'Royal Indigo', hex: '#6366f1' },
+  { name: 'Ruby Crimson', hex: '#dc2626' },
+  { name: 'Amber Gold', hex: '#d97706' },
+  { name: 'Monochrome', hex: '#171717' },
+];
+
 interface Profile {
-  companyName: string; address1: string; address2: string; city: string; state: string;
-  stateCode: string; pincode: string; phone: string; email: string; website: string;
-  rbiLicenceNo: string; cin: string; pan: string; gstin: string;
-  logoBase64?: string; signatureBase64?: string;
-  invoiceNumberFormat: string; invoiceNumberSeed: number;
-  defaultSacCode: string; defaultCgstRate: number; defaultSgstRate: number;
-  defaultIgstRate: number; defaultGstTaxableBasePct: number;
-  disclaimer1: string; disclaimer2: string;
+  companyName: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  stateCode: string;
+  pincode: string;
+  phone: string;
+  email: string;
+  website: string;
+  rbiLicenceNo: string;
+  cin: string;
+  pan: string;
+  gstin: string;
+  logoBase64?: string;
+  signatureBase64?: string;
+  invoiceNumberFormat: string;
+  invoiceNumberSeed: number;
+  invoiceTemplate: InvoiceTemplateId;
+  invoiceAccentColor: string;
+  defaultSacCode: string;
+  defaultCgstRate: number;
+  defaultSgstRate: number;
+  defaultIgstRate: number;
+  defaultGstTaxableBasePct: number;
+  disclaimer1: string;
+  disclaimer2: string;
 }
 
 const DEFAULT_PROFILE: Profile = {
-  companyName: '', address1: '', address2: '', city: '', state: '', stateCode: '', pincode: '',
-  phone: '', email: '', website: '', rbiLicenceNo: '', cin: '', pan: '', gstin: '',
-  invoiceNumberFormat: 'INV-{YY}-{SEQ}', invoiceNumberSeed: 0,
-  defaultSacCode: '997157', defaultCgstRate: 9, defaultSgstRate: 9, defaultIgstRate: 18,
+  companyName: '',
+  address1: '',
+  address2: '',
+  city: '',
+  state: '',
+  stateCode: '',
+  pincode: '',
+  phone: '',
+  email: '',
+  website: '',
+  rbiLicenceNo: '',
+  cin: '',
+  pan: '',
+  gstin: '',
+  invoiceNumberFormat: 'INV-{YY}-{SEQ}',
+  invoiceNumberSeed: 0,
+  invoiceTemplate: 'modern',
+  invoiceAccentColor: '#2563eb',
+  defaultSacCode: '997157',
+  defaultCgstRate: 9,
+  defaultSgstRate: 9,
+  defaultIgstRate: 18,
   defaultGstTaxableBasePct: 1,
   disclaimer1: 'Please count your money before leaving the counter.',
-  disclaimer2: 'If any dispute arises against this invoice by any Law Enforcement Agency/Cyber Crime Cell/Any Regulating Authority, Clients will be solely responsible for the same.',
+  disclaimer2:
+    'If any dispute arises against this invoice by any Law Enforcement Agency/Cyber Crime Cell/Any Regulating Authority, Clients will be solely responsible for the same.',
 };
-
-function invoiceNumberPreview(format: string, seed = 1): string {
-  const yy = new Date().getFullYear().toString().slice(-2);
-  const yyyy = new Date().getFullYear().toString();
-  const seq = String(seed).padStart(4, '0');
-  return format.replace('{SEQ}', seq).replace('{YY}', yy).replace('{YYYY}', yyyy);
-}
 
 export default function BusinessProfilePage() {
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [customFormat, setCustomFormat] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string>('');
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const sigRef = useRef<HTMLInputElement>(null);
 
@@ -56,16 +172,25 @@ export default function BusinessProfilePage() {
         if (data) {
           setProfile({
             companyName: data.companyName ?? '',
-            address1: data.address1 ?? '', address2: data.address2 ?? '',
-            city: data.city ?? '', state: data.state ?? '',
-            stateCode: data.stateCode ?? '', pincode: data.pincode ?? '',
-            phone: data.phone ?? '', email: data.email ?? '', website: data.website ?? '',
-            rbiLicenceNo: data.rbiLicenceNo ?? '', cin: data.cin ?? '',
-            pan: data.pan ?? '', gstin: data.gstin ?? '',
+            address1: data.address1 ?? '',
+            address2: data.address2 ?? '',
+            city: data.city ?? '',
+            state: data.state ?? '',
+            stateCode: data.stateCode ?? '',
+            pincode: data.pincode ?? '',
+            phone: data.phone ?? '',
+            email: data.email ?? '',
+            website: data.website ?? '',
+            rbiLicenceNo: data.rbiLicenceNo ?? '',
+            cin: data.cin ?? '',
+            pan: data.pan ?? '',
+            gstin: data.gstin ?? '',
             logoBase64: data.logoBase64 ?? undefined,
             signatureBase64: data.signatureBase64 ?? undefined,
             invoiceNumberFormat: data.invoiceNumberFormat ?? 'INV-{YY}-{SEQ}',
             invoiceNumberSeed: Number(data.invoiceNumberSeed ?? 0),
+            invoiceTemplate: (data.invoiceTemplate as InvoiceTemplateId) ?? 'modern',
+            invoiceAccentColor: data.invoiceAccentColor ?? '#2563eb',
             defaultSacCode: data.defaultSacCode ?? '997157',
             defaultCgstRate: Number(data.defaultCgstRate ?? 9),
             defaultSgstRate: Number(data.defaultSgstRate ?? 9),
@@ -74,7 +199,7 @@ export default function BusinessProfilePage() {
             disclaimer1: data.disclaimer1 ?? DEFAULT_PROFILE.disclaimer1,
             disclaimer2: data.disclaimer2 ?? DEFAULT_PROFILE.disclaimer2,
           });
-          const isPreset = INVOICE_FORMAT_PRESETS.some(p => p.value === data.invoiceNumberFormat);
+          const isPreset = INVOICE_FORMAT_PRESETS.some((p) => p.value === data.invoiceNumberFormat);
           setCustomFormat(!isPreset);
         }
       })
@@ -94,6 +219,27 @@ export default function BusinessProfilePage() {
     reader.readAsDataURL(file);
   }
 
+  async function handleOpenPreview(tmpl?: InvoiceTemplateId, color?: string) {
+    const targetTemplate = tmpl || profile.invoiceTemplate;
+    const targetColor = color || profile.invoiceAccentColor;
+    setLoadingPreview(true);
+    setPreviewOpen(true);
+    try {
+      const res = await fetch(
+        `/api/trpc/businessProfile.previewHtml?input=${encodeURIComponent(
+          JSON.stringify({ template: targetTemplate, accentColor: targetColor }),
+        )}`,
+        { credentials: 'include' },
+      );
+      const json = await res.json();
+      const html = json?.result?.data?.html || '';
+      setPreviewHtml(html);
+    } catch {
+      /* ignore */
+    }
+    setLoadingPreview(false);
+  }
+
   async function handleSave() {
     setSaving(true);
     setSaved(false);
@@ -108,201 +254,459 @@ export default function BusinessProfilePage() {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setSaving(false);
   }
 
-  function field(label: string, key: keyof Profile, placeholder = '', type = 'text') {
-    return (
-      <div className="space-y-1">
-        <label className="text-xs font-semibold text-foreground">{label}</label>
-        <Input
-          type={type}
-          placeholder={placeholder}
-          value={String(profile[key] ?? '')}
-          onChange={(e) => set(key, type === 'number' ? Number(e.target.value) as any : e.target.value as any)}
-          className="h-8 text-xs"
-        />
-      </div>
-    );
-  }
-
-  const formatPreview = invoiceNumberPreview(profile.invoiceNumberFormat, profile.invoiceNumberSeed + 1);
-
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Business Profile</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Your company details are auto-filled into every Cash Memo. All fields are editable at invoice creation time.
-        </p>
+    <div className="space-y-8 max-w-4xl pb-16">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Building2 className="size-6 text-accent" />
+            Company &amp; Invoice Customization
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Configure RBI/FFMC regulatory credentials, select your PDF invoice template, and customize GST rules.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => handleOpenPreview()}
+            className="gap-1.5 shrink-0"
+          >
+            <Eye className="size-4 text-accent" />
+            <span>Live PDF Preview</span>
+          </Button>
+          <Button onClick={handleSave} disabled={saving} className="gap-2 shrink-0">
+            {saved ? (
+              <>
+                <CheckCircle2 className="size-4 text-emerald-400" />
+                <span>Saved!</span>
+              </>
+            ) : (
+              <span>{saving ? 'Saving...' : 'Save Settings'}</span>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Company Identity */}
-      <Card padding="md" className="space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-accent/10 text-accent"><Building2 className="size-4" /></div>
-          <h2 className="text-sm font-bold">Company Identity</h2>
+      {/* ─── SECTION 1: PDF INVOICE TEMPLATE & STYLING ─── */}
+      <Card padding="lg" className="border-accent/40 bg-accent/5 space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Palette className="size-5 text-accent" />
+            <h2 className="text-base font-bold text-foreground">Invoice PDF Design &amp; Template</h2>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent/10 text-accent">
+            5 Professional Layouts
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {field('Company Name', 'companyName', 'SANDEEP FLIGHTS TICKET PVT.LTD.')}
-          {field('Phone', 'phone', '9812379821')}
-          {field('Email', 'email', 'info@company.com', 'email')}
-          {field('Website', 'website', 'www.company.com')}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {field('Address Line 1', 'address1', '89/22 Kanwersain Gupta Chowk')}
-          {field('Address Line 2', 'address2', 'Railway Road')}
-          {field('City', 'city', 'Tohana')}
-          {field('Pincode', 'pincode', '125120')}
-          {field('State', 'state', 'Haryana')}
-          {field('State Code', 'stateCode', '06')}
-        </div>
-      </Card>
+        <p className="text-xs text-muted-foreground">
+          Choose the design archetype for your generated Cash Memos &amp; Tax Invoices. All templates render 100% compliant RBI, FEMA, and GST data.
+        </p>
 
-      {/* Regulatory Identifiers */}
-      <Card padding="md" className="space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400"><FileText className="size-4" /></div>
-          <h2 className="text-sm font-bold">Regulatory Identifiers</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {field('RBI Licence No.', 'rbiLicenceNo', 'CHG-FFMC-0403-2024')}
-          {field('CIN', 'cin', 'U79120HR2023PTC112676')}
-          {field('PAN', 'pan', 'ABLCS0715P')}
-          {field('GSTIN', 'gstin', '06ABLCS0715P2ZX')}
-        </div>
-      </Card>
+        {/* Template Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {TEMPLATES.map((tmpl) => {
+            const isSelected = profile.invoiceTemplate === tmpl.id;
+            return (
+              <div
+                key={tmpl.id}
+                onClick={() => {
+                  set('invoiceTemplate', tmpl.id);
+                  handleOpenPreview(tmpl.id, profile.invoiceAccentColor);
+                }}
+                className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                  isSelected
+                    ? 'border-accent bg-card shadow-md ring-2 ring-accent/30'
+                    : 'border-border/70 bg-card/60 hover:bg-card hover:border-border'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {tmpl.style}
+                    </span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${tmpl.previewHeaderBg}`}>
+                      {tmpl.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-foreground mb-1">{tmpl.name}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{tmpl.description}</p>
+                </div>
 
-      {/* Invoice Number Format */}
-      <Card padding="md" className="space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400"><FileText className="size-4" /></div>
-          <h2 className="text-sm font-bold">Invoice Numbering</h2>
-        </div>
-        <div className="space-y-2">
-          {INVOICE_FORMAT_PRESETS.map((p) => (
-            <label key={p.value} className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${profile.invoiceNumberFormat === p.value && !customFormat ? 'border-accent bg-accent/5' : 'border-border/60 hover:bg-muted/40'}`}>
-              <div className="flex items-center gap-2">
-                <input type="radio" name="invoiceFmt" checked={profile.invoiceNumberFormat === p.value && !customFormat}
-                  onChange={() => { set('invoiceNumberFormat', p.value); setCustomFormat(false); }}
-                  className="size-3.5 accent-[hsl(var(--accent))]" />
-                <span className="text-xs font-medium">{p.label}</span>
+                <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-accent flex items-center gap-1">
+                    <Eye className="size-3" />
+                    <span>Click to Preview</span>
+                  </span>
+                  {isSelected && (
+                    <span className="size-5 rounded-full bg-accent text-white flex items-center justify-center">
+                      <Check className="size-3.5" />
+                    </span>
+                  )}
+                </div>
               </div>
-              <span className="text-xs font-mono text-muted-foreground">{p.preview}</span>
-            </label>
-          ))}
-          <label className={`flex items-center gap-3 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${customFormat ? 'border-accent bg-accent/5' : 'border-border/60 hover:bg-muted/40'}`}>
-            <input type="radio" name="invoiceFmt" checked={customFormat}
-              onChange={() => setCustomFormat(true)}
-              className="size-3.5 accent-[hsl(var(--accent))]" />
-            <span className="text-xs font-medium">Custom format</span>
-          </label>
-          {customFormat && (
-            <div className="ml-6 space-y-1">
+            );
+          })}
+        </div>
+
+        {/* Accent Color Picker */}
+        <div className="pt-3 border-t border-border/60">
+          <label className="text-xs font-bold text-foreground block mb-2">Primary Accent Color</label>
+          <div className="flex flex-wrap items-center gap-3">
+            {ACCENT_COLORS.map((col) => (
+              <button
+                key={col.hex}
+                type="button"
+                onClick={() => {
+                  set('invoiceAccentColor', col.hex);
+                  if (previewOpen) handleOpenPreview(profile.invoiceTemplate, col.hex);
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                  profile.invoiceAccentColor === col.hex
+                    ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent'
+                    : 'border-border/60 hover:bg-muted text-muted-foreground'
+                }`}
+              >
+                <span className="size-3.5 rounded-full shrink-0 shadow-xs" style={{ background: col.hex }} />
+                <span>{col.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* ─── SECTION 2: COMPANY IDENTITY ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Company Identity</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Input
+            label="Company Name *"
+            value={profile.companyName}
+            onChange={(e) => set('companyName', e.target.value)}
+            placeholder="e.g. S.P. FOREX PRIVATE LIMITED"
+          />
+          <Input
+            label="Phone"
+            value={profile.phone}
+            onChange={(e) => set('phone', e.target.value)}
+            placeholder="+91 11 2345 6789"
+          />
+          <Input
+            label="Email"
+            type="email"
+            value={profile.email}
+            onChange={(e) => set('email', e.target.value)}
+            placeholder="info@spforex.com"
+          />
+          <Input
+            label="Website"
+            value={profile.website}
+            onChange={(e) => set('website', e.target.value)}
+            placeholder="www.spforex.com"
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Input
+            label="Address Line 1"
+            value={profile.address1}
+            onChange={(e) => set('address1', e.target.value)}
+            placeholder="Shop / Unit No., Building Name"
+          />
+          <Input
+            label="Address Line 2"
+            value={profile.address2}
+            onChange={(e) => set('address2', e.target.value)}
+            placeholder="Street, Area / Landmark"
+          />
+        </div>
+
+        <div className="grid sm:grid-cols-4 gap-3">
+          <Input
+            label="City"
+            value={profile.city}
+            onChange={(e) => set('city', e.target.value)}
+            placeholder="New Delhi"
+          />
+          <Input
+            label="State"
+            value={profile.state}
+            onChange={(e) => set('state', e.target.value)}
+            placeholder="Delhi"
+          />
+          <Input
+            label="State Code"
+            value={profile.stateCode}
+            onChange={(e) => set('stateCode', e.target.value)}
+            placeholder="07"
+            maxLength={2}
+          />
+          <Input
+            label="Pincode"
+            value={profile.pincode}
+            onChange={(e) => set('pincode', e.target.value)}
+            placeholder="110001"
+            maxLength={6}
+          />
+        </div>
+      </Card>
+
+      {/* ─── SECTION 3: REGULATORY CREDENTIALS ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">RBI / Regulatory Identifiers</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <Input
+            label="RBI Licence No."
+            value={profile.rbiLicenceNo}
+            onChange={(e) => set('rbiLicenceNo', e.target.value)}
+            placeholder="e.g. FE.DEL.FFMC/0421/2024"
+            className="font-mono"
+          />
+          <Input
+            label="CIN"
+            value={profile.cin}
+            onChange={(e) => set('cin', e.target.value.toUpperCase())}
+            placeholder="U74999DL2024PTC123456"
+            className="font-mono"
+          />
+          <Input
+            label="PAN"
+            value={profile.pan}
+            onChange={(e) => set('pan', e.target.value.toUpperCase())}
+            placeholder="AABCS1234F"
+            maxLength={10}
+            className="font-mono"
+          />
+          <Input
+            label="GSTIN"
+            value={profile.gstin}
+            onChange={(e) => set('gstin', e.target.value.toUpperCase())}
+            placeholder="07AABCS1234F1Z5"
+            maxLength={15}
+            className="font-mono"
+          />
+        </div>
+      </Card>
+
+      {/* ─── SECTION 4: LOGO & SIGNATURE ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Brand Assets</h2>
+        <div className="grid sm:grid-cols-2 gap-6">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground block mb-2">Company Logo</label>
+            <div className="flex items-center gap-4">
+              {profile.logoBase64 ? (
+                <img
+                  src={profile.logoBase64}
+                  alt="Company logo"
+                  className="h-14 max-w-[160px] object-contain border rounded-lg p-1 bg-white"
+                />
+              ) : (
+                <div className="h-14 w-28 border border-dashed rounded-lg flex items-center justify-center text-xs text-muted-foreground bg-muted/20">
+                  No logo
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => logoRef.current?.click()}
+                className="gap-1.5"
+              >
+                <Upload className="size-3.5" />
+                Upload Logo
+              </Button>
+              <input
+                ref={logoRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload('logoBase64', file);
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground block mb-2">Authorized Signatory Stamp</label>
+            <div className="flex items-center gap-4">
+              {profile.signatureBase64 ? (
+                <img
+                  src={profile.signatureBase64}
+                  alt="Signature"
+                  className="h-14 max-w-[160px] object-contain border rounded-lg p-1 bg-white"
+                />
+              ) : (
+                <div className="h-14 w-28 border border-dashed rounded-lg flex items-center justify-center text-xs text-muted-foreground bg-muted/20">
+                  No signature
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => sigRef.current?.click()}
+                className="gap-1.5"
+              >
+                <Upload className="size-3.5" />
+                Upload Stamp
+              </Button>
+              <input
+                ref={sigRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload('signatureBase64', file);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* ─── SECTION 5: INVOICE NUMBER SEQUENCE ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Invoice Numbering Sequence</h2>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground block mb-1">Format Pattern</label>
+            <select
+              value={customFormat ? 'custom' : profile.invoiceNumberFormat}
+              onChange={(e) => {
+                if (e.target.value === 'custom') {
+                  setCustomFormat(true);
+                } else {
+                  setCustomFormat(false);
+                  set('invoiceNumberFormat', e.target.value);
+                }
+              }}
+              className="w-full h-9 rounded-xl border border-input bg-background text-xs px-2"
+            >
+              {INVOICE_FORMAT_PRESETS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label} (e.g. {p.preview})
+                </option>
+              ))}
+              <option value="custom">Custom Format...</option>
+            </select>
+            {customFormat && (
               <Input
-                placeholder="{PREFIX}/{SEQ} — tokens: {SEQ} {YY} {YYYY}"
                 value={profile.invoiceNumberFormat}
                 onChange={(e) => set('invoiceNumberFormat', e.target.value)}
-                className="h-8 text-xs font-mono"
+                placeholder="e.g. BILL/{YY}/{SEQ}"
+                className="mt-2 font-mono text-xs"
               />
-              <p className="text-[10px] text-muted-foreground">Available tokens: <code>{'{SEQ}'}</code> <code>{'{YY}'}</code> <code>{'{YYYY}'}</code></p>
+            )}
+          </div>
+          <Input
+            label="Sequence Counter Seed"
+            type="number"
+            value={profile.invoiceNumberSeed}
+            onChange={(e) => set('invoiceNumberSeed', parseInt(e.target.value, 10) || 0)}
+            placeholder="0"
+          />
+        </div>
+      </Card>
+
+      {/* ─── SECTION 6: STATUTORY DISCLAIMERS ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Statutory RBI Disclaimers</h2>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground block mb-1">Disclaimer 1 (Header Note)</label>
+            <textarea
+              value={profile.disclaimer1}
+              onChange={(e) => set('disclaimer1', e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-input bg-background p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground block mb-1">
+              Disclaimer 2 (Legal &amp; FEMA Compliance Note)
+            </label>
+            <textarea
+              value={profile.disclaimer2}
+              onChange={(e) => set('disclaimer2', e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-input bg-background p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-accent"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* ─── LIVE PREVIEW MODAL ─── */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border max-w-4xl w-full h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-card">
+              <div className="flex items-center gap-3">
+                <Eye className="size-4 text-accent" />
+                <h3 className="text-sm font-bold text-foreground">
+                  Live Invoice Preview — {TEMPLATES.find((t) => t.id === profile.invoiceTemplate)?.name}
+                </h3>
+                <span
+                  className="size-3 rounded-full shadow-xs"
+                  style={{ background: profile.invoiceAccentColor }}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleOpenPreview(profile.invoiceTemplate, profile.invoiceAccentColor)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                  title="Refresh Preview"
+                >
+                  <RefreshCw className={`size-4 ${loadingPreview ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setPreviewOpen(false)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="flex items-center justify-between rounded-xl bg-muted/40 border border-border/60 px-4 py-2.5 text-xs">
-          <span className="text-muted-foreground">Next invoice number preview:</span>
-          <span className="font-mono font-bold text-accent">{formatPreview}</span>
-        </div>
-        {field('Invoice Number Seed (last used sequence)', 'invoiceNumberSeed', '0', 'number')}
-      </Card>
 
-      {/* GST Defaults */}
-      <Card padding="md" className="space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><Percent className="size-4" /></div>
-          <h2 className="text-sm font-bold">GST Defaults</h2>
-          <span className="text-[10px] text-muted-foreground ml-1">(auto-applied on new invoices, editable per invoice)</span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {field('CGST %', 'defaultCgstRate', '9', 'number')}
-          {field('SGST %', 'defaultSgstRate', '9', 'number')}
-          {field('IGST %', 'defaultIgstRate', '18', 'number')}
-          {field('GST Taxable Base %', 'defaultGstTaxableBasePct', '1', 'number')}
-        </div>
-        <div className="p-3 rounded-xl bg-muted/30 border border-border text-xs text-muted-foreground">
-          <strong>GST Taxable Base %</strong> — For FFMC/Money Changers, GST applies on a small percentage of the INR equivalent (typically <strong>1%</strong>). Example: if you sell EUR worth ₹33,750, the taxable base is ₹337.50 (1%), then CGST 9% = ₹30.38, SGST 9% = ₹30.38.
-        </div>
-        {field('Default SAC Code', 'defaultSacCode', '997157')}
-      </Card>
+            {/* Modal Body: Rendered HTML iframe */}
+            <div className="flex-1 bg-neutral-900 p-4 flex items-center justify-center overflow-auto">
+              {loadingPreview ? (
+                <div className="flex items-center gap-2 text-white/60 text-sm font-semibold">
+                  <RefreshCw className="size-5 animate-spin" />
+                  <span>Generating preview...</span>
+                </div>
+              ) : (
+                <iframe
+                  srcDoc={previewHtml}
+                  title="Invoice PDF Preview"
+                  className="w-full h-full max-w-[800px] bg-white rounded-lg shadow-2xl border border-neutral-700"
+                />
+              )}
+            </div>
 
-      {/* Logo + Signature */}
-      <Card padding="md" className="space-y-4">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400"><Upload className="size-4" /></div>
-          <h2 className="text-sm font-bold">Logo & Signature</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-foreground">Company Logo</label>
-            {profile.logoBase64 && (
-              <img src={profile.logoBase64} className="h-16 object-contain rounded-lg border border-border bg-muted/30 p-1" alt="logo" />
-            )}
-            <Button variant="outline" size="sm" className="text-xs gap-1.5 w-full" onClick={() => logoRef.current?.click()}>
-              <Upload className="size-3.5" /> {profile.logoBase64 ? 'Replace Logo' : 'Upload Logo'}
-            </Button>
-            <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('logoBase64', f); }} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-foreground">Authorised Signature</label>
-            {profile.signatureBase64 && (
-              <img src={profile.signatureBase64} className="h-16 object-contain rounded-lg border border-border bg-muted/30 p-1" alt="signature" />
-            )}
-            <Button variant="outline" size="sm" className="text-xs gap-1.5 w-full" onClick={() => sigRef.current?.click()}>
-              <Upload className="size-3.5" /> {profile.signatureBase64 ? 'Replace Signature' : 'Upload Signature'}
-            </Button>
-            <input ref={sigRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('signatureBase64', f); }} />
+            {/* Modal Footer */}
+            <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-card text-xs">
+              <div className="text-muted-foreground">
+                Displaying sample Cash Memo with your active credentials and chosen theme.
+              </div>
+              <Button size="sm" onClick={() => setPreviewOpen(false)}>
+                Done
+              </Button>
+            </div>
           </div>
         </div>
-      </Card>
-
-      {/* Disclaimers */}
-      <Card padding="md" className="space-y-3">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400"><AlertCircle className="size-4" /></div>
-          <h2 className="text-sm font-bold">Invoice Disclaimers</h2>
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-foreground">Disclaimer 1</label>
-          <textarea
-            rows={2}
-            className="w-full text-xs rounded-xl border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent/40 resize-none"
-            value={profile.disclaimer1}
-            onChange={(e) => set('disclaimer1', e.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-foreground">Disclaimer 2</label>
-          <textarea
-            rows={3}
-            className="w-full text-xs rounded-xl border border-border bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent/40 resize-none"
-            value={profile.disclaimer2}
-            onChange={(e) => set('disclaimer2', e.target.value)}
-          />
-        </div>
-      </Card>
-
-      {/* Save */}
-      <div className="flex items-center gap-3 pb-4">
-        <Button onClick={handleSave} disabled={saving} className="text-xs gap-1.5">
-          {saving ? 'Saving...' : 'Save Business Profile'}
-        </Button>
-        {saved && (
-          <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">
-            <CheckCircle2 className="size-3.5" /> Profile saved successfully!
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }
