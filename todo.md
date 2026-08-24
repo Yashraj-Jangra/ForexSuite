@@ -33,6 +33,7 @@
 #### Git History
 - Commit: `🗄️ add phone, designation, and last login columns to user schema and account router`
 - Commit: `✨ add personal account management, details telemetry, and session manager`
+- Commit: `🐛 fix account details fetching, profile update, and trpc client binding`
 
 ---
 
