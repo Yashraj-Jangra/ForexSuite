@@ -288,46 +288,66 @@ export const rateRouter = router({
       const days = input.days;
       const curr = WORLD_CURRENCIES.find((c) => c.code === code) || WORLD_CURRENCIES[0]!;
 
-      // Retrieve base rate
-      const baseInfo = BASELINE_INR_RATES[code] || { rate: 86.85, change24h: 0.12 };
-      const baseRate = baseInfo.rate;
+      // Retrieve real current rate from database
+      const [latestDbRow] = await ctx.db
+        .select()
+        .from(exchangeRates)
+        .where(and(eq(exchangeRates.baseCurrency, 'INR'), eq(exchangeRates.targetCurrency, code)))
+        .orderBy(desc(exchangeRates.fetchedAt))
+        .limit(1);
 
-      // Deterministic smooth time-series generation for the requested window
-      const points: { date: string; rate: number; high: number; low: number }[] = [];
+      const baseRate = latestDbRow ? Number(latestDbRow.rate) : (BASELINE_INR_RATES[code]?.rate ?? 86.85);
+
+      // Deterministic smooth time-series generation anchored seamlessly to current spot rate
+      const historyRates: number[] = new Array(days);
+      historyRates[days - 1] = baseRate;
+
+      // Backward random walk with mean-reversion drift to eliminate any boundary spikes
+      let r = baseRate;
+      for (let i = days - 2; i >= 0; i--) {
+        const stepIdx = days - 1 - i;
+        const wave = Math.sin(stepIdx * 0.32) * 0.0015 + Math.cos(stepIdx * 0.55) * 0.001;
+        const noise = (((Math.sin(stepIdx * 19.123 + (code.charCodeAt(0) || 65)) * 43758.5453) % 1) - 0.5) * 0.0018;
+        r = r * (1 - wave - noise);
+        historyRates[i] = r;
+      }
+
+      const points: { date: string; rate: number; high: number; low: number; changePct: number }[] = [];
       const today = new Date();
 
-      // Seeded random walk for smooth realistic chart curve
-      let currentRate = baseRate * (1 - (days * 0.0008));
-
-      for (let i = days - 1; i >= 0; i--) {
+      for (let i = 0; i < days; i++) {
         const d = new Date(today);
-        d.setDate(d.getDate() - i);
+        d.setDate(d.getDate() - (days - 1 - i));
         const dateStr = d.toISOString().split('T')[0]!;
+        const rateVal = Math.round(historyRates[i]! * 10000) / 10000;
+        const highVal = Math.round(rateVal * 1.0025 * 10000) / 10000;
+        const lowVal = Math.round(rateVal * 0.9975 * 10000) / 10000;
+        const prevRate = i > 0 ? historyRates[i - 1]! : rateVal;
+        const changePct = Math.round(((rateVal - prevRate) / prevRate) * 10000) / 100;
 
-        // Subtle deterministic sine & walk drift
-        const delta = (Math.sin(i * 0.45) * 0.003 + Math.cos(i * 0.8) * 0.002) * baseRate;
-        const rate = Math.round((currentRate + delta) * 10000) / 10000;
-        const high = Math.round(rate * 1.003 * 10000) / 10000;
-        const low = Math.round(rate * 0.997 * 10000) / 10000;
-
-        points.push({ date: dateStr, rate, high, low });
-        currentRate = rate;
+        points.push({
+          date: dateStr,
+          rate: rateVal,
+          high: highVal,
+          low: lowVal,
+          changePct: isNaN(changePct) ? 0 : changePct,
+        });
       }
 
-      // Ensure last point matches latest base rate
-      if (points.length > 0) {
-        points[points.length - 1]!.rate = baseRate;
-      }
+      const allLows = points.map((p) => p.low);
+      const allHighs = points.map((p) => p.high);
+      const startRate = points[0]?.rate ?? baseRate;
+      const overallChangePct = Math.round(((baseRate - startRate) / startRate) * 10000) / 100;
 
       return {
         currency: curr,
         days,
         points,
-        min: Math.min(...points.map((p) => p.low)),
-        max: Math.max(...points.map((p) => p.high)),
-        startRate: points[0]?.rate ?? baseRate,
+        min: Math.min(...allLows),
+        max: Math.max(...allHighs),
+        startRate,
         currentRate: baseRate,
-        overallChangePct: Math.round(((baseRate - (points[0]?.rate ?? baseRate)) / (points[0]?.rate ?? baseRate)) * 10000) / 100,
+        overallChangePct: isNaN(overallChangePct) ? 0 : overallChangePct,
       };
     }),
 

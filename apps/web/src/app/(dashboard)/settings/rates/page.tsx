@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Illustration } from '@/components/ui/illustration';
 import {
   RefreshCw,
   CheckCircle2,
@@ -20,6 +19,10 @@ import {
   Check,
   ShieldCheck,
   Zap,
+  Info,
+  Layers,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface CurrencyRateItem {
@@ -43,6 +46,7 @@ interface HistoryPoint {
   rate: number;
   high: number;
   low: number;
+  changePct?: number;
 }
 
 interface HistoryResponse {
@@ -85,6 +89,7 @@ export default function RateSettingsPage() {
   const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [showNoticeDetails, setShowNoticeDetails] = useState(true);
 
   // Settings & Sync
   const [intervalVal, setIntervalVal] = useState(60);
@@ -94,6 +99,19 @@ export default function RateSettingsPage() {
   const [convertFrom, setConvertFrom] = useState('USD');
   const [convertTo, setConvertTo] = useState('INR');
   const [convertAmount, setConvertAmount] = useState('1000');
+
+  // Chart Hover State
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    x: number;
+    y: number;
+    date: string;
+    rate: number;
+    high: number;
+    low: number;
+    changePct: number;
+  } | null>(null);
+
+  const chartSvgRef = useRef<SVGSVGElement | null>(null);
 
   function showToast(msg: string, ok: boolean) {
     setToast({ msg, ok });
@@ -130,6 +148,7 @@ export default function RateSettingsPage() {
   // 2. Fetch history for selected currency
   async function loadHistory(code: string, days: number) {
     setHistoryLoading(true);
+    setHoveredPoint(null);
     try {
       const res = await fetch(
         `/api/trpc/rates.history?input=${encodeURIComponent(JSON.stringify({ code, days }))}`,
@@ -224,22 +243,38 @@ export default function RateSettingsPage() {
     return Math.round(num * effectiveRate * 100) / 100;
   }, [convertAmount, convertFrom, convertTo, rates]);
 
+  // SVG Chart Geometry Constants
+  const SVG_WIDTH = 800;
+  const SVG_HEIGHT = 260;
+  const PADDING_X = 24;
+  const PADDING_TOP = 20;
+  const PADDING_BOTTOM = 40;
+
   // Chart SVG Coordinates Generator
   const chartSvgPath = useMemo(() => {
-    if (!historyData || historyData.points.length < 2) return { path: '', area: '', points: [] };
+    if (!historyData || historyData.points.length < 2) {
+      return { path: '', area: '', points: [], gridLines: [], labelPoints: [] };
+    }
     const pts = historyData.points;
-    const minVal = historyData.min * 0.998;
-    const maxVal = historyData.max * 1.002;
+    const minVal = historyData.min * 0.9985;
+    const maxVal = historyData.max * 1.0015;
     const range = maxVal - minVal || 1;
 
-    const width = 760;
-    const height = 240;
-    const padding = 20;
+    const innerWidth = SVG_WIDTH - 2 * PADDING_X;
+    const innerHeight = SVG_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
     const coords = pts.map((p, idx) => {
-      const x = padding + (idx / (pts.length - 1)) * (width - 2 * padding);
-      const y = height - padding - ((p.rate - minVal) / range) * (height - 2 * padding);
-      return { x, y, date: p.date, rate: p.rate };
+      const x = PADDING_X + (idx / (pts.length - 1)) * innerWidth;
+      const y = PADDING_TOP + (1 - (p.rate - minVal) / range) * innerHeight;
+      return {
+        x,
+        y,
+        date: p.date,
+        rate: p.rate,
+        high: p.high,
+        low: p.low,
+        changePct: p.changePct ?? 0,
+      };
     });
 
     let pathD = `M ${coords[0]!.x} ${coords[0]!.y}`;
@@ -251,13 +286,51 @@ export default function RateSettingsPage() {
     }
 
     const lastCoord = coords[coords.length - 1]!;
-    const areaD = `${pathD} L ${lastCoord.x} ${height} L ${coords[0]!.x} ${height} Z`;
+    const areaD = `${pathD} L ${lastCoord.x} ${SVG_HEIGHT - PADDING_BOTTOM} L ${coords[0]!.x} ${SVG_HEIGHT - PADDING_BOTTOM} Z`;
 
-    return { path: pathD, area: areaD, points: coords };
+    // 4 Horizontal Grid Lines
+    const gridLines = [0.25, 0.5, 0.75, 1.0].map((pct) => {
+      const y = PADDING_TOP + pct * innerHeight;
+      const val = maxVal - pct * range;
+      return { y, val };
+    });
+
+    // 5-6 Clean, Non-overlapping X-axis Date Labels
+    const labelStep = Math.max(1, Math.floor((coords.length - 1) / 5));
+    const labelPoints = coords.filter((_, idx) => idx % labelStep === 0 || idx === coords.length - 1);
+
+    return { path: pathD, area: areaD, points: coords, gridLines, labelPoints };
   }, [historyData]);
 
+  // Handle Chart Hover
+  function handleChartMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    if (!chartSvgRef.current || chartSvgPath.points.length === 0) return;
+    const rect = chartSvgRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const svgX = (mouseX / rect.width) * SVG_WIDTH;
+
+    // Find nearest point
+    let closest = chartSvgPath.points[0]!;
+    let minDiff = Math.abs(closest.x - svgX);
+
+    for (let i = 1; i < chartSvgPath.points.length; i++) {
+      const pt = chartSvgPath.points[i]!;
+      const diff = Math.abs(pt.x - svgX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = pt;
+      }
+    }
+
+    setHoveredPoint(closest);
+  }
+
+  function handleChartMouseLeave() {
+    setHoveredPoint(null);
+  }
+
   return (
-    <div className="w-full max-w-[1600px] mx-auto space-y-8 pb-16 px-2 sm:px-4">
+    <div className="w-full max-w-[1600px] mx-auto space-y-7 pb-16 px-2 sm:px-4">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -287,7 +360,7 @@ export default function RateSettingsPage() {
           <Button
             onClick={handleSyncNow}
             disabled={syncing}
-            className="gap-2 shrink-0 px-4 shadow-md shadow-accent/20"
+            className="gap-2 shrink-0 px-4 shadow-sm"
           >
             <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
             <span>{syncing ? 'Synchronizing Rates...' : 'Sync Rates Now'}</span>
@@ -295,9 +368,70 @@ export default function RateSettingsPage() {
         </div>
       </div>
 
+      {/* ─── STATUTORY FOREX SOURCING & CALCULATION NOTICE ─── */}
+      <div className="rounded-2xl border border-accent/30 bg-accent/[0.03] p-4 sm:p-5 space-y-3 transition-all">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-accent font-bold text-sm">
+            <Info className="size-4.5 text-accent shrink-0" />
+            <span>How Exchange Rates Are Sourced, Quoted &amp; Maintained in VaultBill</span>
+          </div>
+          <button
+            onClick={() => setShowNoticeDetails(!showNoticeDetails)}
+            className="p-1 rounded-lg hover:bg-accent/10 text-accent text-xs font-semibold flex items-center gap-1 transition-colors"
+          >
+            <span>{showNoticeDetails ? 'Hide Notes' : 'Show Details'}</span>
+            {showNoticeDetails ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          </button>
+        </div>
+
+        {showNoticeDetails && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs text-muted-foreground pt-1 border-t border-accent/15">
+            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
+              <strong className="text-foreground flex items-center gap-1.5 font-sans">
+                <span className="size-1.5 rounded-full bg-accent" />
+                1. Quotation Standard (1 Unit = INR)
+              </strong>
+              <p className="text-[11px] leading-relaxed">
+                In compliance with FEMA &amp; RBI Master Directions, all rates are quoted as 1 Foreign Currency Unit = INR Price (e.g. 1 USD = ₹86.85).
+              </p>
+            </div>
+
+            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
+              <strong className="text-foreground flex items-center gap-1.5 font-sans">
+                <span className="size-1.5 rounded-full bg-accent" />
+                2. Live Central Bank Feeds
+              </strong>
+              <p className="text-[11px] leading-relaxed">
+                Spot rates aggregate from real-time interbank feeds (OpenExchange &amp; Frankfurter Central Bank) with failover resilience.
+              </p>
+            </div>
+
+            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
+              <strong className="text-foreground flex items-center gap-1.5 font-sans">
+                <span className="size-1.5 rounded-full bg-accent" />
+                3. FFMC &amp; Dealer Spreads
+              </strong>
+              <p className="text-[11px] leading-relaxed">
+                Authorised Money Changers (FFMC) may apply board-approved purchase/sale margins during Cash Memo generation.
+              </p>
+            </div>
+
+            <div className="space-y-1 p-2.5 rounded-xl bg-card/60 border border-border/40">
+              <strong className="text-foreground flex items-center gap-1.5 font-sans">
+                <span className="size-1.5 rounded-full bg-accent" />
+                4. Automated Background Sync
+              </strong>
+              <p className="text-[11px] leading-relaxed">
+                Rates cache updates automatically on your configured schedule, with instant manual refresh capability via Sync Rates Now.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ─── TELEMETRY & FEED STATUS BANNER ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card padding="md" className="border-accent/30 bg-accent/[0.03] flex items-center gap-4">
+        <Card padding="md" className="border-accent/30 bg-accent/[0.02] flex items-center gap-4">
           <div className="size-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
             <Zap className="size-5" />
           </div>
@@ -355,8 +489,8 @@ export default function RateSettingsPage() {
         </Card>
       </div>
 
-      {/* ─── SECTION 1: INTERACTIVE HISTORICAL RATE TREND CHART & ANALYTICS ─── */}
-      <Card padding="lg" className="border-border/80 shadow-sm space-y-6">
+      {/* ─── SECTION 1: THEME-MATCHED HISTORICAL RATE TREND CHART & HOVER TOOLTIP ─── */}
+      <Card padding="lg" className="border-border shadow-xs space-y-6 bg-card">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/60 pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -366,7 +500,7 @@ export default function RateSettingsPage() {
               </h2>
             </div>
             <p className="text-xs text-muted-foreground">
-              Interactive high-resolution price trend against Indian Rupee over selected statutory period.
+              Hover over any point on the trendline to inspect the precise historical exchange rate and daily movement.
             </p>
           </div>
 
@@ -412,7 +546,7 @@ export default function RateSettingsPage() {
                 <span className="font-bold">{code}</span>
                 {currInfo && (
                   <span className="text-[11px] font-mono text-muted-foreground">
-                    ₹{currInfo.rateInInr.toFixed(2)}
+                    ₹{currInfo.rateInInr.toFixed(currInfo.rateInInr < 1 ? 3 : 2)}
                   </span>
                 )}
               </button>
@@ -420,42 +554,44 @@ export default function RateSettingsPage() {
           })}
         </div>
 
-        {/* SVG Interactive Trend Chart Canvas */}
-        <div className="relative w-full bg-neutral-950/90 border border-neutral-800 rounded-2xl p-4 sm:p-6 overflow-hidden shadow-inner">
+        {/* Theme-Adaptive SVG Interactive Trend Chart Canvas */}
+        <div className="relative w-full bg-muted/15 border border-border/70 rounded-2xl p-4 sm:p-6 overflow-hidden shadow-inner">
           {historyLoading ? (
-            <div className="h-60 flex flex-col items-center justify-center space-y-3">
+            <div className="h-64 flex flex-col items-center justify-center space-y-3">
               <RefreshCw className="size-6 text-accent animate-spin" />
-              <span className="text-xs font-mono text-neutral-400">Loading historical data points...</span>
+              <span className="text-xs font-mono text-muted-foreground">Loading historical data points...</span>
             </div>
           ) : (
             <div className="space-y-4">
               {/* Chart Stats Snapshot */}
               <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
                 <div>
-                  <span className="text-[11px] text-neutral-400 block font-mono">Current Spot Rate</span>
-                  <span className="text-xl font-bold text-white font-mono">
-                    ₹{historyData?.currentRate?.toFixed(4) || '86.8500'}
+                  <span className="text-[11px] text-muted-foreground block font-medium">Current Spot Rate</span>
+                  <span className="text-2xl font-bold text-foreground font-mono">
+                    ₹{historyData?.currentRate ? historyData.currentRate.toFixed(4) : '86.8500'}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-6">
                   <div>
-                    <span className="text-[10px] text-neutral-400 block font-mono">Period Low</span>
-                    <span className="text-xs font-bold text-emerald-400 font-mono">
+                    <span className="text-[10px] text-muted-foreground block font-medium">Period Low</span>
+                    <span className="text-xs font-bold text-emerald-500 dark:text-emerald-400 font-mono">
                       ₹{historyData?.min?.toFixed(4) || '86.4000'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-neutral-400 block font-mono">Period High</span>
-                    <span className="text-xs font-bold text-rose-400 font-mono">
+                    <span className="text-[10px] text-muted-foreground block font-medium">Period High</span>
+                    <span className="text-xs font-bold text-rose-500 dark:text-rose-400 font-mono">
                       ₹{historyData?.max?.toFixed(4) || '87.2000'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-neutral-400 block font-mono">Net Drift</span>
+                    <span className="text-[10px] text-muted-foreground block font-medium">Net Drift</span>
                     <span
                       className={`text-xs font-bold font-mono inline-flex items-center gap-1 ${
-                        (historyData?.overallChangePct ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        (historyData?.overallChangePct ?? 0) >= 0
+                          ? 'text-emerald-500 dark:text-emerald-400'
+                          : 'text-rose-500 dark:text-rose-400'
                       }`}
                     >
                       {(historyData?.overallChangePct ?? 0) >= 0 ? (
@@ -463,34 +599,90 @@ export default function RateSettingsPage() {
                       ) : (
                         <TrendingDown className="size-3.5" />
                       )}
-                      {historyData?.overallChangePct ? `${historyData.overallChangePct > 0 ? '+' : ''}${historyData.overallChangePct}%` : '0.00%'}
+                      {historyData?.overallChangePct ? `${historyData.overallChangePct > 0 ? '+' : ''}${historyData.overallChangePct.toFixed(2)}%` : '0.00%'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Chart SVG Graphic */}
-              <div className="w-full h-56 pt-2">
-                <svg viewBox="0 0 760 240" className="w-full h-full overflow-visible">
+              {/* Chart SVG Graphic with Hover Crosshair and Details */}
+              <div className="relative w-full h-64 pt-2">
+                {/* Floating Hover Tooltip */}
+                {hoveredPoint && (
+                  <div
+                    className="absolute z-20 pointer-events-none px-3.5 py-2.5 rounded-xl bg-card border border-border shadow-xl backdrop-blur-md text-xs font-mono space-y-1 transform -translate-x-1/2 -translate-y-full transition-all duration-75"
+                    style={{
+                      left: `${(hoveredPoint.x / SVG_WIDTH) * 100}%`,
+                      top: `${(hoveredPoint.y / SVG_HEIGHT) * 100 - 4}%`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3 text-[10px] text-muted-foreground font-sans font-semibold border-b border-border/50 pb-1">
+                      <span>{hoveredPoint.date}</span>
+                      <span
+                        className={`font-bold ${
+                          hoveredPoint.changePct >= 0
+                            ? 'text-emerald-500 dark:text-emerald-400'
+                            : 'text-rose-500 dark:text-rose-400'
+                        }`}
+                      >
+                        {hoveredPoint.changePct >= 0 ? '+' : ''}{hoveredPoint.changePct.toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold text-foreground">
+                      ₹{hoveredPoint.rate.toFixed(4)}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+                      <span>L: ₹{hoveredPoint.low.toFixed(3)}</span>
+                      <span>H: ₹{hoveredPoint.high.toFixed(3)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <svg
+                  ref={chartSvgRef}
+                  viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+                  className="w-full h-full overflow-visible cursor-crosshair"
+                  onMouseMove={handleChartMouseMove}
+                  onMouseLeave={handleChartMouseLeave}
+                >
                   <defs>
-                    <linearGradient id="rateGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity="0.35" />
+                    <linearGradient id="themeRateGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity="0.28" />
                       <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
 
-                  {/* Horizontal Grid lines */}
-                  <line x1="20" y1="40" x2="740" y2="40" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-                  <line x1="20" y1="100" x2="740" y2="100" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-                  <line x1="20" y1="160" x2="740" y2="160" stroke="rgba(255,255,255,0.06)" strokeDasharray="4 4" />
-                  <line x1="20" y1="220" x2="740" y2="220" stroke="rgba(255,255,255,0.08)" />
+                  {/* Horizontal Grid lines with value labels */}
+                  {chartSvgPath.gridLines.map((gl, i) => (
+                    <g key={i}>
+                      <line
+                        x1={PADDING_X}
+                        y1={gl.y}
+                        x2={SVG_WIDTH - PADDING_X}
+                        y2={gl.y}
+                        stroke="currentColor"
+                        className="text-border/60"
+                        strokeDasharray="4 4"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={SVG_WIDTH - PADDING_X + 6}
+                        y={gl.y + 3}
+                        fill="currentColor"
+                        className="text-muted-foreground/60 text-[9px] font-mono"
+                        textAnchor="start"
+                      >
+                        ₹{gl.val.toFixed(2)}
+                      </text>
+                    </g>
+                  ))}
 
                   {/* Area Fill */}
                   {chartSvgPath.area && (
-                    <path d={chartSvgPath.area} fill="url(#rateGradient)" />
+                    <path d={chartSvgPath.area} fill="url(#themeRateGradient)" />
                   )}
 
-                  {/* Smooth Line */}
+                  {/* Smooth Line Curve */}
                   {chartSvgPath.path && (
                     <path
                       d={chartSvgPath.path}
@@ -498,37 +690,47 @@ export default function RateSettingsPage() {
                       stroke="hsl(var(--accent))"
                       strokeWidth="2.5"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   )}
 
-                  {/* Highlight Points */}
-                  {chartSvgPath.points.map((pt, idx) => {
-                    if (idx % Math.ceil(chartSvgPath.points.length / 8) === 0 || idx === chartSvgPath.points.length - 1) {
-                      return (
-                        <g key={pt.date}>
-                          <circle
-                            cx={pt.x}
-                            cy={pt.y}
-                            r="4"
-                            fill="#ffffff"
-                            stroke="hsl(var(--accent))"
-                            strokeWidth="2"
-                          />
-                          <text
-                            x={pt.x}
-                            y="235"
-                            textAnchor="middle"
-                            fill="rgba(255,255,255,0.4)"
-                            fontSize="9"
-                            fontFamily="monospace"
-                          >
-                            {pt.date.slice(5)}
-                          </text>
-                        </g>
-                      );
-                    }
-                    return null;
-                  })}
+                  {/* Clean Non-overlapping X-axis Date Labels */}
+                  {chartSvgPath.labelPoints.map((pt) => (
+                    <text
+                      key={pt.date}
+                      x={pt.x}
+                      y={SVG_HEIGHT - PADDING_BOTTOM + 20}
+                      textAnchor="middle"
+                      fill="currentColor"
+                      className="text-muted-foreground text-[10px] font-mono"
+                    >
+                      {pt.date.slice(5)}
+                    </text>
+                  ))}
+
+                  {/* Crosshair Line & Point on Hover */}
+                  {hoveredPoint && (
+                    <g>
+                      <line
+                        x1={hoveredPoint.x}
+                        y1={PADDING_TOP}
+                        x2={hoveredPoint.x}
+                        y2={SVG_HEIGHT - PADDING_BOTTOM}
+                        stroke="hsl(var(--accent))"
+                        strokeDasharray="3 3"
+                        strokeWidth="1.5"
+                      />
+                      <circle
+                        cx={hoveredPoint.x}
+                        cy={hoveredPoint.y}
+                        r="6"
+                        fill="hsl(var(--accent))"
+                        stroke="hsl(var(--background))"
+                        strokeWidth="2.5"
+                        className="shadow-md"
+                      />
+                    </g>
+                  )}
                 </svg>
               </div>
             </div>
@@ -559,7 +761,7 @@ export default function RateSettingsPage() {
           </div>
 
           {/* Rates Table Container */}
-          <Card padding="none" className="overflow-hidden border-border/80 shadow-xs">
+          <Card padding="none" className="overflow-hidden border-border shadow-xs">
             <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
               <table className="w-full text-xs text-left">
                 <thead className="sticky top-0 z-10 bg-card border-b border-border/70 text-muted-foreground uppercase text-[10px] font-bold">
@@ -573,6 +775,7 @@ export default function RateSettingsPage() {
                 <tbody className="divide-y divide-border/40 font-mono">
                   {filteredRates.map((r) => {
                     const isPositive = r.change24h >= 0;
+                    const isSelected = selectedChartCode === r.code;
                     return (
                       <tr
                         key={r.code}
@@ -580,7 +783,9 @@ export default function RateSettingsPage() {
                           setSelectedChartCode(r.code);
                           setConvertFrom(r.code);
                         }}
-                        className="hover:bg-muted/40 transition-colors cursor-pointer group"
+                        className={`transition-colors cursor-pointer group ${
+                          isSelected ? 'bg-accent/10' : 'hover:bg-muted/40'
+                        }`}
                       >
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5 font-sans">
@@ -610,8 +815,8 @@ export default function RateSettingsPage() {
                           <span
                             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-sans text-[11px] font-extrabold border ${
                               isPositive
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20'
                             }`}
                           >
                             {isPositive ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
@@ -706,7 +911,7 @@ export default function RateSettingsPage() {
               </div>
 
               {/* Result Preview Box */}
-              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-1.5 shadow-xs">
+              <div className="p-4 rounded-2xl bg-card border border-border space-y-1.5 shadow-xs">
                 <span className="text-[11px] font-semibold text-muted-foreground block">
                   Calculated Equivalent
                 </span>
