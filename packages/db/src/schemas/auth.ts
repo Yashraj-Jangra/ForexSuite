@@ -6,6 +6,10 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').default(false).notNull(),
   name: text('name').notNull(),
   image: text('image'),
+  isSuperAdmin: boolean('is_super_admin').default(false).notNull(),
+  banned: boolean('banned').default(false).notNull(),
+  bannedAt: timestamp('banned_at'),
+  bannedReason: text('banned_reason'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

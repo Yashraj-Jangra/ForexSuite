@@ -23,6 +23,7 @@ import { businessProfileRouter } from '../modules/business-profile/router';
 import { edfRouter } from '../modules/edf/router';
 import { emailRouter } from '../modules/email/router';
 import { backupRouter } from '../modules/backups/router';
+import { adminRouter } from '../modules/admin/router';
 
 export const appRouter = router({
   health: publicProcedure.query(() => ({
@@ -86,6 +87,7 @@ export const appRouter = router({
   edf: edfRouter,
   email: emailRouter,
   backups: backupRouter,
+  admin: adminRouter,
 });
 
 export type AppRouter = typeof appRouter;

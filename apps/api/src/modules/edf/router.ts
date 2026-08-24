@@ -92,7 +92,7 @@ export const edfRouter = router({
 
       const [updated] = await ctx.db
         .update(edfRecords)
-        .set(updates as Parameters<typeof ctx.db.update>[0] extends infer T ? T : never)
+        .set(updates as any)
         .where(eq(edfRecords.id, input.id))
         .returning();
       return updated;
@@ -122,7 +122,7 @@ export const edfRouter = router({
       }
       const [updated] = await ctx.db
         .update(edfRecords)
-        .set(updates as Parameters<typeof ctx.db.update>[0] extends infer T ? T : never)
+        .set(updates as any)
         .where(eq(edfRecords.id, id))
         .returning();
       return updated;

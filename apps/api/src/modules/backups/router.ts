@@ -2,6 +2,15 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../../trpc/context';
 import { backupConfig } from '@vaultbill/db/schemas/tenant';
 import { eq } from 'drizzle-orm';
+import { createCipheriv, randomBytes, createHash } from 'crypto';
+
+function encryptSecret(text: string): string {
+  const key = createHash('sha256').update(process.env.EMAIL_ENCRYPTION_KEY ?? 'vaultbill-dev-key').digest();
+  const iv = randomBytes(16);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const enc = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), enc]).toString('base64');
+}
 
 export const backupRouter = router({
   getConfig: protectedProcedure.query(async ({ ctx }) => {
@@ -68,16 +77,6 @@ export const backupRouter = router({
       s3Endpoint: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { createHash } = await import('crypto');
-      function encryptSecret(text: string): string {
-        const key = createHash('sha256').update(process.env.EMAIL_ENCRYPTION_KEY ?? 'vaultbill-dev-key').digest();
-        const { createCipheriv, randomBytes } = await import('crypto');
-        const iv = randomBytes(16);
-        const cipher = createCipheriv('aes-256-gcm', key, iv);
-        const enc = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
-        return Buffer.concat([iv, cipher.getAuthTag(), enc]).toString('base64');
-      }
-
       const encryptedSecret = input.s3SecretKey ? encryptSecret(input.s3SecretKey) : undefined;
       const updates: Record<string, unknown> = {
         s3Enabled: input.s3Enabled,

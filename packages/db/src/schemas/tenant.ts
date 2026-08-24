@@ -384,20 +384,3 @@ export const edfRecords = pgTable('edf_records', {
   invoiceIdIdx: index('edf_records_invoice_id_idx').on(table.invoiceId),
   statusIdx: index('edf_records_status_idx').on(table.status),
 }));
-
-// ─── Tenant Members (multi-user per tenant) ───────────────────────────────────
-export const tenantMembers = pgTable('tenant_members', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: text('tenant_id').notNull(),
-  userId: text('user_id').notNull(),           // FK → public.user (better-auth)
-  role: text('role').notNull().default('viewer'), // 'owner'|'admin'|'accountant'|'viewer'
-  inviteStatus: text('invite_status').notNull().default('pending'), // 'pending'|'accepted'
-  inviteToken: text('invite_token'),
-  inviteEmail: text('invite_email'),
-  invitedAt: timestamp('invited_at').defaultNow().notNull(),
-  joinedAt: timestamp('joined_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  tenantUserIdx: index('tenant_members_tenant_user_idx').on(table.tenantId, table.userId),
-}));
