@@ -1,42 +1,46 @@
 # todo.md — VaultBill Project Tracker
 
-## Session 5 — 2026-08-24 (Customizable Multi-Style PDF Invoice Engine & Live Preview)
+## Session 6 — 2026-08-24 (Personal Account Management, Telemetry & Session Control)
 
-### ✅ Completed — 5 PDF Invoice Design Archetypes & Customizer
-
-#### PDF Rendering Engine (`packages/pdf`)
-- **`invoice-modern.ts`**: Modern Minimalist layout with subtle rounded borders, refined typography, pill badges, and right-aligned summary card.
-- **`invoice-executive.ts`**: Executive Slate layout with deep slate header band, dual-tone table rows, authoritative corporate seal styling, and prominent framed totals.
-- **`invoice-classic.ts`**: Classic Heritage FFMC layout with traditional full double-border box grid, formal serif typography, and authentic money-changer look.
-- **`invoice-minimal.ts`**: Clean Swiss Monochrome layout with high-contrast typography, sharp rules, and zero background ink waste (ideal for thermal/laser printers).
-- **`invoice-corporate.ts`**: Neo-Corporate layout with gradient top accent line, floating card modules, and badge pills for SAC & purpose codes.
-- **`invoice.ts`**: Dynamic dispatcher routing to the selected template style while guaranteeing 100% data fidelity across all RBI/FEMA/GST regulatory fields.
+### ✅ Completed — Account Management & Security
 
 #### Database & Schema (`packages/db`)
-- Added `invoiceTemplate` ('modern' | 'executive' | 'classic' | 'minimal' | 'corporate') and `invoiceAccentColor` to `businessProfile` schema in `tenant.ts`.
-- Pushed schema changes via `drizzle-kit push` (`[✓] Changes applied`).
+- Added `phone`, `designation`, and `lastLoginAt` columns to `user` table in `auth.ts`.
+- Synchronized schema via `drizzle-kit push` (`[✓] Changes applied`).
 
 #### Backend API (`apps/api`)
-- Updated `invoices/pdf.ts` to pass tenant's default `invoiceTemplate` and `invoiceAccentColor` (with support for per-request overrides).
-- Added `previewHtml` tRPC query in `business-profile/router.ts` to render real-time sample Cash Memos in the browser for any template and accent color combination.
+- Created `accountRouter` (`apps/api/src/modules/account/router.ts`) with:
+  - `account.get`: Returns consolidated user profile (Name, Email, Phone, Designation, Avatar, Role, Super Admin status, Workspace Joined Date, Last Accessed timestamp, IP address, and browser User Agent).
+  - `account.update`: Allows updating legal name, phone number, job designation, and avatar photo.
+  - `account.sessions`: Lists all active login sessions sorted chronologically.
+  - `account.revokeSession`: Terminates remote device sessions.
+- Registered `account: accountRouter` in `appRouter`.
 
-#### Web Settings & Live Preview (`apps/web`)
-- Updated `settings/profile/page.tsx` with:
-  - Visual template selector cards with archetype badges and layout descriptions.
-  - Accent color picker with 7 curated business color presets (Sapphire, Slate, Emerald, Indigo, Ruby, Amber, Monochrome).
-  - **Live PDF Preview Modal** with iframe rendering of actual invoice output before saving.
+#### Frontend UI (`apps/web`)
+- Created [`/settings/account`](file:///d:/Projects/Currency%20Manager/apps/web/src/app/(dashboard)/settings/account/page.tsx):
+  - User identity hero card with role badge, verified email pill, and avatar upload.
+  - Profile edit form for legal name, phone number, and designation.
+  - Access timeline snapshot (Last accessed relative time, IP & device parse, creation & workspace join dates).
+  - Active device session manager with one-click remote session termination.
+- Linked user footer pill in [`Sidebar.tsx`](file:///d:/Projects/Currency%20Manager/apps/web/src/components/Sidebar.tsx) directly to `/settings/account`.
+- Added **Account & Security** card to [`/settings`](file:///d:/Projects/Currency%20Manager/apps/web/src/app/(dashboard)/settings/page.tsx).
 
 #### Verification & Typechecks
 - `@vaultbill/api`: `tsc --noEmit` → **0 errors (Exit 0)** ✅
 - `@vaultbill/web`: `tsc --noEmit` → **0 errors (Exit 0)** ✅
 - `@vaultbill/db`: `tsc --noEmit` → **0 errors (Exit 0)** ✅
-- `@vaultbill/pdf`: `tsc --noEmit` → **0 errors (Exit 0)** ✅
 
 #### Git History
-- Commit: `🎨 add 5 customizable pdf invoice templates and rendering engine`
-- Commit: `✨ add invoice template visual picker and live preview to settings`
-- Commit: `🐛 fix invoice pdf preview rendering and screen modal positioning`
-- Commit: `🎨 update dark theme to neutral charcoal grey`
+- Commit: `🗄️ add phone, designation, and last login columns to user schema and account router`
+- Commit: `✨ add personal account management, details telemetry, and session manager`
+
+---
+
+## Session 5 — 2026-08-24 (Customizable Multi-Style PDF Invoice Engine & Live Preview)
+- 5 PDF Invoice Design Archetypes (`modern`, `executive`, `classic`, `minimal`, `corporate`)
+- Suite Customization & Color Swatches
+- Real-Time Live Preview Modal & Split Preview Window
+- Dark theme refined to neutral charcoal grey (`hsl(240 5% 9%)`)
 
 ---
 
@@ -45,13 +49,6 @@
 - Customer KYC Editing Modal with auto-fill
 - e-FIRC & EDPMS Reconciliation API & UI
 - LUT Registry Form GST RFD-11 Tracking
-
----
-
-## Session 3 — 2026-08-24 (Super Admin Control Plane Launch)
-- Public Schema Control Plane (`platformAuditLog`, `featureFlags`, `platformSmtp`, `platformBackups`)
-- Dedicated `/admin` route group & layout
-- Command Center, Tenants Directory, Global Users, Platform SMTP, Backups, Flags, System Health, Audit Trail
 
 ---
 
