@@ -1,23 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { renderInvoiceHtml } from '@vaultbill/pdf/templates';
 import {
   CheckCircle2,
   Building2,
-  FileText,
-  Percent,
-  Upload,
-  AlertCircle,
   Palette,
   Eye,
   X,
-  Sparkles,
+  Upload,
   RefreshCw,
-  Sliders,
   Check,
+  Maximize2,
+  Minimize2,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 
 const INVOICE_FORMAT_PRESETS = [
@@ -34,8 +34,7 @@ const TEMPLATES: {
   badge: string;
   description: string;
   style: string;
-  previewHeaderBg: string;
-  previewBorder: string;
+  badgeColor: string;
 }[] = [
   {
     id: 'modern',
@@ -43,8 +42,7 @@ const TEMPLATES: {
     badge: 'Recommended',
     description: 'Clean fintech aesthetic, soft borders, subtle pill badges, right-aligned summary.',
     style: 'Modern & Clean',
-    previewHeaderBg: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
-    previewBorder: 'border-blue-500',
+    badgeColor: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   },
   {
     id: 'executive',
@@ -52,8 +50,7 @@ const TEMPLATES: {
     badge: 'Authoritative',
     description: 'Deep slate header band, dual-tone table grid, gold/accent highlights, corporate feel.',
     style: 'Tier-1 Banking',
-    previewHeaderBg: 'bg-slate-900 border-slate-700 text-slate-200',
-    previewBorder: 'border-slate-500',
+    badgeColor: 'bg-slate-800 border-slate-700 text-slate-200',
   },
   {
     id: 'classic',
@@ -61,8 +58,7 @@ const TEMPLATES: {
     badge: 'Traditional',
     description: 'Traditional full-border box grid, formal serif accents, double-line rules, money-changer look.',
     style: 'Classic Banking',
-    previewHeaderBg: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-    previewBorder: 'border-amber-500',
+    badgeColor: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
   },
   {
     id: 'minimal',
@@ -70,8 +66,7 @@ const TEMPLATES: {
     badge: 'Zero Ink Waste',
     description: 'High-contrast Swiss layout, sharp horizontal rules, zero color fills, ideal for thermal/laser printers.',
     style: 'Swiss Monochrome',
-    previewHeaderBg: 'bg-neutral-800 border-neutral-700 text-neutral-300',
-    previewBorder: 'border-neutral-400',
+    badgeColor: 'bg-neutral-800 border-neutral-700 text-neutral-300',
   },
   {
     id: 'corporate',
@@ -79,8 +74,7 @@ const TEMPLATES: {
     badge: 'Contemporary',
     description: 'Sleek accent top line, floating card sections, colored badges for SAC & purpose codes.',
     style: 'Modern Enterprise',
-    previewHeaderBg: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
-    previewBorder: 'border-indigo-500',
+    badgeColor: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
   },
 ];
 
@@ -153,14 +147,82 @@ const DEFAULT_PROFILE: Profile = {
     'If any dispute arises against this invoice by any Law Enforcement Agency/Cyber Crime Cell/Any Regulating Authority, Clients will be solely responsible for the same.',
 };
 
+function generateSampleInvoiceHtml(profile: Profile, tmpl: InvoiceTemplateId, accentColor: string): string {
+  return renderInvoiceHtml({
+    businessProfile: {
+      companyName: profile.companyName || 'ACME FOREX & MONEY CHANGER PVT LTD',
+      address1: profile.address1 || 'Suite 401, Financial Express Towers',
+      address2: profile.address2 || 'Nariman Point',
+      city: profile.city || 'Mumbai',
+      state: profile.state || 'Maharashtra',
+      stateCode: profile.stateCode || '27',
+      pincode: profile.pincode || '400021',
+      phone: profile.phone || '+91 22 2847 9000',
+      email: profile.email || 'compliance@acmeforex.com',
+      website: profile.website || 'www.acmeforex.com',
+      rbiLicenceNo: profile.rbiLicenceNo || 'FE.MUM.FFMC/0421/2024',
+      cin: profile.cin || 'U74999MH2024PTC123456',
+      pan: profile.pan || 'AABCA1234F',
+      gstin: profile.gstin || '27AABCA1234F1Z5',
+      logoBase64: profile.logoBase64,
+      signatureBase64: profile.signatureBase64,
+      disclaimer1: profile.disclaimer1 || 'Please count your money before leaving the counter.',
+      disclaimer2: profile.disclaimer2 || 'All transactions are subject to FEMA guidelines and RBI master circulars.',
+    },
+    invoiceNumber: 'CM-26-0421',
+    invoiceType: 'cash_memo',
+    invoiceDate: new Date().toISOString().split('T')[0] ?? '2026-08-24',
+    saleDate: new Date().toISOString().split('T')[0] ?? '2026-08-24',
+    placeOfSupply: profile.stateCode ? `(${profile.stateCode}) ${profile.state || 'MAHARASHTRA'}` : '(27) MAHARASHTRA',
+    customerName: 'Ms. Sarah Jenkins',
+    customerAddress: 'Flat 12B, Sea Green Heights, Worli, Mumbai',
+    customerPan: 'ABCDE9876K',
+    customerPassport: 'Z9876543',
+    customerNationality: 'BRITISH',
+    customerDestinationCountry: 'UNITED KINGDOM',
+    customerPurpose: 'PRIVATE VISIT',
+    customerGender: 'Ms.',
+    transactionNarrative:
+      'BEING FOREIGN CURRENCY PURCHASED AGAINST BRITISH PASSPORT NO. Z9876543 FOR PRIVATE OVERSEAS TRAVEL UNDER LIBERALISED REMITTANCE SCHEME (LRS).',
+    items: [
+      {
+        description: 'US DOLLAR CURRENCY NOTES',
+        currencyName: 'USD - US Dollar',
+        sacCode: profile.defaultSacCode || '997157',
+        amountForeign: 2500,
+        itemExchangeRate: 86.45,
+        amountInr: 216125,
+      },
+      {
+        description: 'BRITISH POUND CURRENCY NOTES',
+        currencyName: 'GBP - British Pound',
+        sacCode: profile.defaultSacCode || '997157',
+        amountForeign: 1000,
+        itemExchangeRate: 111.2,
+        amountInr: 111200,
+      },
+    ],
+    gstTaxableAmount: 3273.25,
+    cgstRate: profile.defaultCgstRate || 9,
+    cgstAmount: 294.59,
+    sgstRate: profile.defaultSgstRate || 9,
+    sgstAmount: 294.59,
+    roundOff: -0.18,
+    total: 327914,
+    amountInWords: 'Rupees Three Lakh Twenty Seven Thousand Nine Hundred Fourteen Only',
+    paymentMode: 'NEFT / RTGS',
+    paymentReference: 'HDFCR520260824987',
+    template: tmpl,
+    accentColor: accentColor,
+  });
+}
+
 export default function BusinessProfilePage() {
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [customFormat, setCustomFormat] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState<string>('');
-  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [fullscreenPreview, setFullscreenPreview] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const sigRef = useRef<HTMLInputElement>(null);
 
@@ -219,26 +281,10 @@ export default function BusinessProfilePage() {
     reader.readAsDataURL(file);
   }
 
-  async function handleOpenPreview(tmpl?: InvoiceTemplateId, color?: string) {
-    const targetTemplate = tmpl || profile.invoiceTemplate;
-    const targetColor = color || profile.invoiceAccentColor;
-    setLoadingPreview(true);
-    setPreviewOpen(true);
-    try {
-      const res = await fetch(
-        `/api/trpc/businessProfile.previewHtml?input=${encodeURIComponent(
-          JSON.stringify({ template: targetTemplate, accentColor: targetColor }),
-        )}`,
-        { credentials: 'include' },
-      );
-      const json = await res.json();
-      const html = json?.result?.data?.html || '';
-      setPreviewHtml(html);
-    } catch {
-      /* ignore */
-    }
-    setLoadingPreview(false);
-  }
+  // Instant real-time rendered HTML (0 latency)
+  const previewHtml = useMemo(() => {
+    return generateSampleInvoiceHtml(profile, profile.invoiceTemplate, profile.invoiceAccentColor);
+  }, [profile]);
 
   async function handleSave() {
     setSaving(true);
@@ -261,7 +307,7 @@ export default function BusinessProfilePage() {
   }
 
   return (
-    <div className="space-y-8 max-w-4xl pb-16">
+    <div className="space-y-8 max-w-5xl pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -276,11 +322,11 @@ export default function BusinessProfilePage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => handleOpenPreview()}
+            onClick={() => setFullscreenPreview(true)}
             className="gap-1.5 shrink-0"
           >
-            <Eye className="size-4 text-accent" />
-            <span>Live PDF Preview</span>
+            <Maximize2 className="size-4 text-accent" />
+            <span>Full-Screen Preview</span>
           </Button>
           <Button onClick={handleSave} disabled={saving} className="gap-2 shrink-0">
             {saved ? (
@@ -295,8 +341,8 @@ export default function BusinessProfilePage() {
         </div>
       </div>
 
-      {/* ─── SECTION 1: PDF INVOICE TEMPLATE & STYLING ─── */}
-      <Card padding="lg" className="border-accent/40 bg-accent/5 space-y-5">
+      {/* ─── SECTION 1: PDF INVOICE TEMPLATE & LIVE SPLIT PREVIEW ─── */}
+      <Card padding="lg" className="border-accent/40 bg-accent/5 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Palette className="size-5 text-accent" />
@@ -317,10 +363,7 @@ export default function BusinessProfilePage() {
             return (
               <div
                 key={tmpl.id}
-                onClick={() => {
-                  set('invoiceTemplate', tmpl.id);
-                  handleOpenPreview(tmpl.id, profile.invoiceAccentColor);
-                }}
+                onClick={() => set('invoiceTemplate', tmpl.id)}
                 className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
                   isSelected
                     ? 'border-accent bg-card shadow-md ring-2 ring-accent/30'
@@ -332,7 +375,7 @@ export default function BusinessProfilePage() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                       {tmpl.style}
                     </span>
-                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${tmpl.previewHeaderBg}`}>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${tmpl.badgeColor}`}>
                       {tmpl.badge}
                     </span>
                   </div>
@@ -343,7 +386,7 @@ export default function BusinessProfilePage() {
                 <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-accent flex items-center gap-1">
                     <Eye className="size-3" />
-                    <span>Click to Preview</span>
+                    <span>{isSelected ? 'Active Selection' : 'Click to Select & Preview'}</span>
                   </span>
                   {isSelected && (
                     <span className="size-5 rounded-full bg-accent text-white flex items-center justify-center">
@@ -357,17 +400,14 @@ export default function BusinessProfilePage() {
         </div>
 
         {/* Accent Color Picker */}
-        <div className="pt-3 border-t border-border/60">
+        <div className="pt-2 border-t border-border/60">
           <label className="text-xs font-bold text-foreground block mb-2">Primary Accent Color</label>
           <div className="flex flex-wrap items-center gap-3">
             {ACCENT_COLORS.map((col) => (
               <button
                 key={col.hex}
                 type="button"
-                onClick={() => {
-                  set('invoiceAccentColor', col.hex);
-                  if (previewOpen) handleOpenPreview(profile.invoiceTemplate, col.hex);
-                }}
+                onClick={() => set('invoiceAccentColor', col.hex)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
                   profile.invoiceAccentColor === col.hex
                     ? 'border-accent bg-accent/10 text-foreground ring-1 ring-accent'
@@ -378,6 +418,35 @@ export default function BusinessProfilePage() {
                 <span>{col.name}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Inline Live Preview Window */}
+        <div className="pt-4 border-t border-border/60">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-accent" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Real-Time Render Preview ({TEMPLATES.find((t) => t.id === profile.invoiceTemplate)?.name})
+              </h3>
+            </div>
+            <button
+              onClick={() => setFullscreenPreview(true)}
+              className="text-xs text-accent hover:underline flex items-center gap-1 font-semibold"
+            >
+              <Maximize2 className="size-3.5" />
+              <span>Expand Preview</span>
+            </button>
+          </div>
+
+          <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 md:p-6 flex items-center justify-center overflow-hidden">
+            <div className="w-full max-w-[760px] h-[520px] bg-white rounded-lg shadow-2xl overflow-hidden border border-neutral-700">
+              <iframe
+                srcDoc={previewHtml}
+                title="Real-Time Invoice Preview"
+                className="w-full h-full border-none"
+              />
+            </div>
           </div>
         </div>
       </Card>
@@ -537,7 +606,9 @@ export default function BusinessProfilePage() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-muted-foreground block mb-2">Authorized Signatory Stamp</label>
+            <label className="text-xs font-semibold text-muted-foreground block mb-2">
+              Authorized Signatory Stamp
+            </label>
             <div className="flex items-center gap-4">
               {profile.signatureBase64 ? (
                 <img
@@ -646,61 +717,53 @@ export default function BusinessProfilePage() {
         </div>
       </Card>
 
-      {/* ─── LIVE PREVIEW MODAL ─── */}
-      {previewOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border max-w-4xl w-full h-[90vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+      {/* ─── FULLSCREEN MODAL PREVIEW ─── */}
+      {fullscreenPreview && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-150">
+          <div className="bg-card border border-border w-full max-w-5xl h-[92vh] rounded-2xl flex flex-col shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-card">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
               <div className="flex items-center gap-3">
-                <Eye className="size-4 text-accent" />
-                <h3 className="text-sm font-bold text-foreground">
-                  Live Invoice Preview — {TEMPLATES.find((t) => t.id === profile.invoiceTemplate)?.name}
-                </h3>
-                <span
-                  className="size-3 rounded-full shadow-xs"
-                  style={{ background: profile.invoiceAccentColor }}
-                />
+                <Palette className="size-5 text-accent" />
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    PDF Style Preview — {TEMPLATES.find((t) => t.id === profile.invoiceTemplate)?.name}
+                  </h3>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                    <span>Accent:</span>
+                    <span className="size-2.5 rounded-full" style={{ background: profile.invoiceAccentColor }} />
+                    <span className="font-mono">{profile.invoiceAccentColor}</span>
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleOpenPreview(profile.invoiceTemplate, profile.invoiceAccentColor)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
-                  title="Refresh Preview"
-                >
-                  <RefreshCw className={`size-4 ${loadingPreview ? 'animate-spin' : ''}`} />
-                </button>
-                <button
-                  onClick={() => setPreviewOpen(false)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFullscreenPreview(false)}
+                  className="gap-1.5"
                 >
                   <X className="size-4" />
-                </button>
+                  <span>Close Preview</span>
+                </Button>
               </div>
             </div>
 
             {/* Modal Body: Rendered HTML iframe */}
-            <div className="flex-1 bg-neutral-900 p-4 flex items-center justify-center overflow-auto">
-              {loadingPreview ? (
-                <div className="flex items-center gap-2 text-white/60 text-sm font-semibold">
-                  <RefreshCw className="size-5 animate-spin" />
-                  <span>Generating preview...</span>
-                </div>
-              ) : (
+            <div className="flex-1 bg-neutral-950 p-4 md:p-8 flex items-center justify-center overflow-auto">
+              <div className="w-full max-w-[800px] h-full bg-white rounded-xl shadow-2xl overflow-hidden border border-neutral-700">
                 <iframe
                   srcDoc={previewHtml}
-                  title="Invoice PDF Preview"
-                  className="w-full h-full max-w-[800px] bg-white rounded-lg shadow-2xl border border-neutral-700"
+                  title="Fullscreen Invoice PDF Preview"
+                  className="w-full h-full border-none"
                 />
-              )}
+              </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-card text-xs">
-              <div className="text-muted-foreground">
-                Displaying sample Cash Memo with your active credentials and chosen theme.
-              </div>
-              <Button size="sm" onClick={() => setPreviewOpen(false)}>
+            <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-card text-xs text-muted-foreground">
+              <span>All 5 templates automatically synchronize with your live company credentials.</span>
+              <Button size="sm" onClick={() => setFullscreenPreview(false)}>
                 Done
               </Button>
             </div>

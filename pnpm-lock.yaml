@@ -154,6 +154,9 @@ importers:
       '@vaultbill/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@vaultbill/pdf':
+        specifier: workspace:*
+        version: link:../../packages/pdf
       '@vaultbill/shared':
         specifier: workspace:*
         version: link:../../packages/shared
