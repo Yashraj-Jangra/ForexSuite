@@ -437,7 +437,7 @@ export const rateRouter = router({
   }),
 
   // ─── 6. On-Demand Sync Trigger ───────────────────────────────────────────
-  syncNow: protectedProcedure.mutation(async ({ ctx }) => {
+  syncNow: publicProcedure.mutation(async ({ ctx }) => {
     try {
       const { inrRates, source } = await fetchLiveRatesFromUpstream();
 

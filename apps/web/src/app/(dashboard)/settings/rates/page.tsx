@@ -180,17 +180,21 @@ export default function RateSettingsPage() {
       const res = await fetch('/api/trpc/rates.syncNow', {
         method: 'POST',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
       });
       const json = await res.json();
-      if (json?.result?.data?.success) {
+      const payload = json?.result?.data ?? json?.result ?? json;
+
+      if (payload?.success) {
         showToast(
-          `Successfully synchronized ${json.result.data.count} global currency pairs!`,
+          `Successfully synchronized ${payload.count ?? 'all'} global currency pairs!`,
           true,
         );
         await loadData();
         await loadHistory(selectedChartCode, chartDays);
       } else {
-        showToast(json?.result?.data?.error || 'Rate sync failed.', false);
+        showToast(payload?.error || json?.error?.message || 'Rate sync failed.', false);
       }
     } catch {
       showToast('Network error while syncing rates.', false);
