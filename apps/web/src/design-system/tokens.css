@@ -1,13 +1,13 @@
 :root {
   /* ------------------------------------------------------------------ */
-  /*  LIGHT THEME (default) — Sleek, Clean Slate                       */
+  /*  LIGHT THEME (default) — Crisp, Clean Neutral Slate               */
   /* ------------------------------------------------------------------ */
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  --background: 220 14% 97%;
+  --foreground: 240 6% 10%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 240 6% 10%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 240 6% 10%;
 
   /* Default accent: Royal Indigo */
   --accent-h: 221;
@@ -15,28 +15,28 @@
   --accent-l: 53%;
   --accent: var(--accent-h) var(--accent-s) var(--accent-l);
   --primary: var(--accent);
-  --primary-foreground: 210 40% 98%;
+  --primary-foreground: 0 0% 98%;
 
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
+  --secondary: 240 5% 96%;
+  --secondary-foreground: 240 6% 10%;
 
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
+  --muted: 240 5% 96%;
+  --muted-foreground: 240 4% 46%;
 
   --accent-soft: var(--accent-h) var(--accent-s) 95%;
   --accent-soft-foreground: var(--accent-h) var(--accent-s) 35%;
 
   --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 98%;
 
   --success: 142 71% 45%;
-  --success-foreground: 210 40% 98%;
+  --success-foreground: 0 0% 98%;
 
   --warning: 38 92% 50%;
-  --warning-foreground: 222 47% 11%;
+  --warning-foreground: 240 6% 10%;
 
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
   --ring: var(--accent);
 
   --radius: 0.875rem;
@@ -59,42 +59,43 @@
 
 .dark {
   /* ------------------------------------------------------------------ */
-  /*  DARK THEME — Rich Charcoal Slate (NOT pitch black, NOT greenish) */
+  /*  DARK THEME — True Neutral Charcoal / Slate Gray                  */
+  /*  Neutral grey tone that harmonizes cleanly with ANY accent color  */
   /* ------------------------------------------------------------------ */
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  --card: 217 33% 15%;
-  --card-foreground: 210 40% 98%;
-  --popover: 217 33% 15%;
-  --popover-foreground: 210 40% 98%;
+  --background: 240 5% 9%;             /* #141416 neutral deep dark */
+  --foreground: 0 0% 98%;              /* #fafafa crisp text */
+  --card: 240 4% 13%;                  /* #1f1f22 elevated charcoal card */
+  --card-foreground: 0 0% 98%;
+  --popover: 240 4% 13%;
+  --popover-foreground: 0 0% 98%;
 
-  --accent-h: 217;
-  --accent-s: 91%;
+  --accent-h: 221;
+  --accent-s: 83%;
   --accent-l: 60%;
   --accent: var(--accent-h) var(--accent-s) var(--accent-l);
   --primary: var(--accent);
-  --primary-foreground: 222 47% 11%;
+  --primary-foreground: 0 0% 98%;
 
-  --secondary: 217 33% 18%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary: 240 4% 17%;             /* #2a2a2e neutral button/pill */
+  --secondary-foreground: 0 0% 98%;
 
-  --muted: 217 33% 18%;
-  --muted-foreground: 215 20% 65%;
+  --muted: 240 4% 16%;                 /* #27272b subtle muted area */
+  --muted-foreground: 240 5% 65%;      /* #a1a1aa readable neutral gray */
 
   --accent-soft: var(--accent-h) var(--accent-s) 18%;
   --accent-soft-foreground: var(--accent-h) var(--accent-s) 75%;
 
   --destructive: 0 72% 51%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 98%;
 
   --success: 142 60% 45%;
-  --success-foreground: 210 40% 98%;
+  --success-foreground: 0 0% 98%;
 
   --warning: 38 92% 50%;
-  --warning-foreground: 222 47% 11%;
+  --warning-foreground: 240 5% 9%;
 
-  --border: 217 33% 22%;
-  --input: 217 33% 22%;
+  --border: 240 4% 19%;                /* #303035 crisp neutral border */
+  --input: 240 4% 19%;
   --ring: var(--accent);
 
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.35);
@@ -102,8 +103,8 @@
   --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.5);
   --shadow-xl: 0 20px 32px -8px rgb(0 0 0 / 0.6);
 
-  --surface-elevated: 217 33% 18%;
-  --surface-overlay: 217 33% 15% / 0.88;
+  --surface-elevated: 240 4% 17%;
+  --surface-overlay: 240 5% 9% / 0.88;
 }
 
 /* ------------------------------------------------------------------ */
