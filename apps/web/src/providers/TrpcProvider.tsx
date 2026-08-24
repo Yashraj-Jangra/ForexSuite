@@ -1,10 +1,11 @@
 'use client';
 
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, type TRPCClient } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import type { AppRouter } from '../../../api/src/trpc/router';
 
-const trpcClient = createTRPCClient<any>({
+const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: (typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')) + '/api/trpc',
@@ -22,9 +23,9 @@ const trpcClient = createTRPCClient<any>({
   ],
 });
 
-const TrpcClientContext = createContext(trpcClient);
+const TrpcClientContext = createContext<any>(trpcClient);
 
-export function useTrpcClient() {
+export function useTrpcClient(): any {
   return useContext(TrpcClientContext);
 }
 

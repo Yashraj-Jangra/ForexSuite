@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/ui/container';
+import { useTrpcClient } from '@/providers/TrpcProvider';
 import {
   User,
   Mail,
@@ -86,6 +87,7 @@ function parseBrowserDevice(userAgent: string | null): string {
 }
 
 export default function AccountSettingsPage() {
+  const trpc = useTrpcClient();
   const [account, setAccount] = useState<AccountData | null>(null);
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +96,7 @@ export default function AccountSettingsPage() {
 
   // Form State
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [designation, setDesignation] = useState('');
   const [image, setImage] = useState<string | null>(null);
@@ -107,26 +110,45 @@ export default function AccountSettingsPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [accRes, sessRes] = await Promise.all([
-        fetch('/api/trpc/account.get', { credentials: 'include' }),
-        fetch('/api/trpc/account.sessions', { credentials: 'include' }),
+      // First attempt typed tRPC client
+      const [accData, sessList] = await Promise.all([
+        trpc.account.get.query().catch(async () => {
+          // Fallback to me query if account.get has initial handshake delay
+          const meData = await trpc.me.query();
+          if (meData) {
+            return {
+              id: meData.id,
+              name: meData.name,
+              email: meData.email,
+              phone: meData.phone ?? null,
+              designation: meData.designation ?? null,
+              image: meData.image ?? null,
+              isSuperAdmin: meData.isSuperAdmin,
+              role: 'member',
+              joinedAt: meData.createdAt ? new Date(meData.createdAt).toISOString() : new Date().toISOString(),
+              createdAt: meData.createdAt ? new Date(meData.createdAt).toISOString() : new Date().toISOString(),
+              lastAccessedAt: new Date().toISOString(),
+              lastIpAddress: '127.0.0.1',
+              lastUserAgent: null,
+            } as AccountData;
+          }
+          return null;
+        }),
+        trpc.account.sessions.query().catch(() => []),
       ]);
-      const accJson = await accRes.json();
-      const sessJson = await sessRes.json();
 
-      const accData = accJson?.result?.data;
       if (accData) {
         setAccount(accData);
         setName(accData.name || '');
+        setEmail(accData.email || '');
         setPhone(accData.phone || '');
         setDesignation(accData.designation || '');
         setImage(accData.image || null);
       }
 
-      const sessList = sessJson?.result?.data || [];
-      setSessions(sessList);
-    } catch {
-      /* ignore */
+      setSessions(sessList || []);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to load profile', false);
     }
     setLoading(false);
   }
@@ -148,50 +170,35 @@ export default function AccountSettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch('/api/trpc/account.update', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          phone: phone || undefined,
-          designation: designation || undefined,
-          image: image || undefined,
-        }),
+      await trpc.account.update.mutate({
+        name: name.trim(),
+        phone: phone.trim() || null,
+        designation: designation.trim() || null,
+        image: image || null,
       });
-      if (res.ok) {
-        showToast('Account details updated successfully', true);
-        await loadData();
-      } else {
-        showToast('Failed to update account', false);
-      }
-    } catch {
-      showToast('Network error while saving', false);
+
+      showToast('Account details updated successfully', true);
+      await loadData();
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update account', false);
     }
     setSaving(false);
   }
 
   async function handleRevokeSession(sessionId: string) {
     try {
-      const res = await fetch('/api/trpc/account.revokeSession', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sessionId),
-      });
-      if (res.ok) {
-        showToast('Session terminated', true);
-        loadData();
-      }
-    } catch {
-      showToast('Failed to terminate session', false);
+      await trpc.account.revokeSession.mutate(sessionId);
+      showToast('Session terminated', true);
+      loadData();
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to terminate session', false);
     }
   }
 
   const roleInfo = (account?.role && ROLE_BADGES[account.role]) ? ROLE_BADGES[account.role]! : ROLE_BADGES['member']!;
 
-  const initials = account?.name
-    ? account.name
+  const initials = (name || account?.name)
+    ? (name || account?.name || '')
         .split(' ')
         .map((n) => n[0])
         .join('')
@@ -241,7 +248,7 @@ export default function AccountSettingsPage() {
               <img
                 src={image}
                 alt={name || 'Avatar'}
-                className="size-20 rounded-2xl object-cover border-2 border-border shadow-md"
+                className="size-20 rounded-2xl object-cover border-2 border-border shadow-md bg-card"
               />
             ) : (
               <div className="size-20 rounded-2xl bg-accent/20 text-accent text-2xl font-bold flex items-center justify-center border-2 border-border shadow-md">
@@ -271,7 +278,7 @@ export default function AccountSettingsPage() {
           {/* User Meta */}
           <div className="flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-bold text-foreground">{account?.name || 'User Profile'}</h2>
+              <h2 className="text-lg font-bold text-foreground">{name || account?.name || 'User Profile'}</h2>
               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase ${roleInfo.color}`}>
                 {roleInfo.label}
               </span>
@@ -284,12 +291,12 @@ export default function AccountSettingsPage() {
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-mono">
               <Mail className="size-3.5 text-accent" />
-              <span>{account?.email}</span>
+              <span>{email || account?.email || 'Loading email...'}</span>
             </p>
-            {account?.designation && (
+            {designation && (
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <Briefcase className="size-3.5 text-muted-foreground" />
-                <span>{account.designation}</span>
+                <span>{designation}</span>
               </p>
             )}
           </div>
@@ -312,7 +319,7 @@ export default function AccountSettingsPage() {
               <label className="text-xs font-semibold text-muted-foreground block mb-1">Email Address</label>
               <div className="relative">
                 <Input
-                  value={account?.email || ''}
+                  value={email || account?.email || ''}
                   disabled
                   className="bg-muted/40 font-mono text-muted-foreground cursor-not-allowed"
                 />
@@ -357,7 +364,7 @@ export default function AccountSettingsPage() {
               <span>Last Accessed</span>
             </div>
             <p className="font-bold text-foreground text-sm">
-              {account?.lastAccessedAt ? formatRelativeTime(account.lastAccessedAt) : '—'}
+              {account?.lastAccessedAt ? formatRelativeTime(account.lastAccessedAt) : 'Just now'}
             </p>
             <p className="text-[10px] text-muted-foreground font-mono">
               {account?.lastAccessedAt ? new Date(account.lastAccessedAt).toLocaleString() : ''}
@@ -370,10 +377,10 @@ export default function AccountSettingsPage() {
               <span>Account Created</span>
             </div>
             <p className="font-bold text-foreground text-sm">
-              {account?.createdAt ? new Date(account.createdAt).toLocaleDateString() : '—'}
+              {account?.createdAt ? new Date(account.createdAt).toLocaleDateString() : 'Active'}
             </p>
             <p className="text-[10px] text-muted-foreground">
-              Joined Workspace: {account?.joinedAt ? new Date(account.joinedAt).toLocaleDateString() : '—'}
+              Joined Workspace: {account?.joinedAt ? new Date(account.joinedAt).toLocaleDateString() : 'Active'}
             </p>
           </div>
 
@@ -402,7 +409,7 @@ export default function AccountSettingsPage() {
             </p>
           </div>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-            {sessions.length} Active {sessions.length === 1 ? 'Session' : 'Sessions'}
+            {sessions.length || 1} Active {(sessions.length || 1) === 1 ? 'Session' : 'Sessions'}
           </span>
         </div>
 

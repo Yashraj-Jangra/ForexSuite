@@ -51,7 +51,7 @@ export const accountRouter = router({
       phone: foundUser.phone ?? null,
       designation: foundUser.designation ?? null,
       image: foundUser.image ?? null,
-      isSuperAdmin: foundUser.isSuperAdmin,
+      isSuperAdmin: Boolean(ctx.isSuperAdmin || foundUser.isSuperAdmin),
       role: currentRole,
       joinedAt: joinedAt?.toISOString() ?? new Date().toISOString(),
       createdAt: foundUser.createdAt.toISOString(),
@@ -65,9 +65,9 @@ export const accountRouter = router({
     .input(
       z.object({
         name: z.string().min(1, 'Name is required'),
-        phone: z.string().optional(),
-        designation: z.string().optional(),
-        image: z.string().optional(),
+        phone: z.string().optional().nullable(),
+        designation: z.string().optional().nullable(),
+        image: z.string().optional().nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -75,9 +75,9 @@ export const accountRouter = router({
         .update(user)
         .set({
           name: input.name,
-          phone: input.phone || null,
-          designation: input.designation || null,
-          image: input.image || null,
+          phone: input.phone ?? null,
+          designation: input.designation ?? null,
+          image: input.image ?? null,
           updatedAt: new Date(),
         })
         .where(eq(user.id, ctx.userId))
