@@ -273,6 +273,9 @@ export const businessProfile = pgTable('business_profile', {
   // Invoice number configuration
   invoiceNumberFormat: text('invoice_number_format').default('INV-{YY}-{SEQ}'),
   invoiceNumberSeed: integer('invoice_number_seed').default(0),
+  // Invoice styling & template selection
+  invoiceTemplate: text('invoice_template').default('modern'), // 'modern' | 'executive' | 'classic' | 'minimal' | 'corporate'
+  invoiceAccentColor: text('invoice_accent_color').default('#2563eb'),
   // GST defaults
   defaultSacCode: text('default_sac_code').default('997157'),
   defaultCgstRate: numeric('default_cgst_rate').default('9'),

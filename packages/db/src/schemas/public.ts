@@ -32,14 +32,18 @@ export const tenants = pgTable('tenants', {
 
 export const tenantMembers = pgTable('tenant_members', {
   id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
+  tenantId: text('tenant_id')
+    .notNull(),
   userId: text('user_id')
-    .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   role: text('role').notNull().default('member'),
+  inviteStatus: text('invite_status').default('active'), // 'pending' | 'active' | 'revoked'
+  inviteToken: text('invite_token'),
+  inviteEmail: text('invite_email'),
+  invitedAt: timestamp('invited_at'),
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   tenantUserIdx: index('public_tenant_members_user_idx').on(table.tenantId, table.userId),
 }));
