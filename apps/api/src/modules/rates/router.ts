@@ -354,7 +354,7 @@ export const rateRouter = router({
   // ─── 3. Precision Two-Way Currency Converter ─────────────────────────────
   convert: publicProcedure
     .input(z.object({ from: z.string(), to: z.string(), amount: z.coerce.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const from = input.from.toUpperCase();
       const to = input.to.toUpperCase();
       const amount = input.amount;
@@ -370,11 +370,36 @@ export const rateRouter = router({
         };
       }
 
-      const fromInInr = from === 'INR' ? 1 : (BASELINE_INR_RATES[from]?.rate ?? 86.85);
-      const toInInr = to === 'INR' ? 1 : (BASELINE_INR_RATES[to]?.rate ?? 1);
+      // 1. Fetch live rates from database for 'from' and 'to' currencies
+      let fromInInr = from === 'INR' ? 1 : (BASELINE_INR_RATES[from]?.rate ?? 86.85);
+      let toInInr = to === 'INR' ? 1 : (BASELINE_INR_RATES[to]?.rate ?? 1);
+
+      if (from !== 'INR') {
+        const [rowFrom] = await ctx.db
+          .select()
+          .from(exchangeRates)
+          .where(and(eq(exchangeRates.baseCurrency, 'INR'), eq(exchangeRates.targetCurrency, from)))
+          .orderBy(desc(exchangeRates.fetchedAt))
+          .limit(1);
+        if (rowFrom && Number(rowFrom.rate) > 0) {
+          fromInInr = Number(rowFrom.rate);
+        }
+      }
+
+      if (to !== 'INR') {
+        const [rowTo] = await ctx.db
+          .select()
+          .from(exchangeRates)
+          .where(and(eq(exchangeRates.baseCurrency, 'INR'), eq(exchangeRates.targetCurrency, to)))
+          .orderBy(desc(exchangeRates.fetchedAt))
+          .limit(1);
+        if (rowTo && Number(rowTo.rate) > 0) {
+          toInInr = Number(rowTo.rate);
+        }
+      }
 
       // Rate: How many 'to' units per 1 'from' unit?
-      // from (in INR) / to (in INR)
+      // e.g. For USD -> INR: fromInInr (86.85) / toInInr (1) = 86.8500
       const effectiveRate = Math.round((fromInInr / toInInr) * 100000) / 100000;
       const converted = Math.round(amount * effectiveRate * 100) / 100;
 
