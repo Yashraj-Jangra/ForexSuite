@@ -807,35 +807,35 @@ export default function RateSettingsPage() {
                       {/* Rich Floating SVG Tooltip Card */}
                       <g
                         transform={`translate(${Math.min(
-                          Math.max(hoveredPoint.x, 95),
-                          SVG_WIDTH - 95,
-                        )}, ${hoveredPoint.y < 90 ? hoveredPoint.y + 18 : hoveredPoint.y - 84})`}
+                          Math.max(hoveredPoint.x, 98),
+                          SVG_WIDTH - 98,
+                        )}, ${hoveredPoint.y < 95 ? hoveredPoint.y + 18 : hoveredPoint.y - 88})`}
                       >
                         {/* Tooltip Card Background */}
                         <rect
-                          x="-90"
+                          x="-93"
                           y="0"
-                          width="180"
-                          height="74"
+                          width="186"
+                          height="76"
                           rx="12"
                           className="fill-card stroke-border"
                           strokeWidth="1.4"
-                          filter="drop-shadow(0 8px 18px rgba(0,0,0,0.22))"
+                          filter="drop-shadow(0 10px 22px rgba(0,0,0,0.22))"
                         />
 
-                        {/* Date & Movement Header */}
+                        {/* Row 1: Currency Code, Date & Movement Header */}
                         <text
-                          x="-76"
-                          y="18"
+                          x="-79"
+                          y="19"
                           className="fill-muted-foreground text-[10px] font-sans font-semibold"
                         >
-                          {historyData?.currency?.flag || '🌐'} {selectedChartCode}/INR · {hoveredPoint.date}
+                          {selectedChartCode}/INR · {hoveredPoint.date}
                         </text>
                         <text
-                          x="76"
-                          y="18"
+                          x="79"
+                          y="19"
                           textAnchor="end"
-                          className={`text-[10px] font-sans font-bold ${
+                          className={`text-[10px] font-sans font-extrabold ${
                             hoveredPoint.changePct >= 0
                               ? 'fill-emerald-500 dark:fill-emerald-400'
                               : 'fill-rose-500 dark:fill-rose-400'
@@ -847,40 +847,30 @@ export default function RateSettingsPage() {
 
                         {/* Divider */}
                         <line
-                          x1="-76"
-                          y1="24"
-                          x2="76"
-                          y2="24"
+                          x1="-79"
+                          y1="26"
+                          x2="79"
+                          y2="26"
                           className="stroke-border/60"
                           strokeWidth="0.8"
                         />
 
-                        {/* Rate in INR */}
+                        {/* Row 2: Rate in INR */}
                         <text
-                          x="-76"
-                          y="43"
-                          className="fill-foreground text-[14px] font-mono font-extrabold"
+                          x="-79"
+                          y="47"
+                          className="fill-foreground text-[15px] font-mono font-black"
                         >
                           ₹{hoveredPoint.rate.toFixed(4)}
                         </text>
 
-                        {/* High / Low Range */}
+                        {/* Row 3: High / Low Range (No overlapping XY tags) */}
                         <text
-                          x="-76"
-                          y="58"
-                          className="fill-muted-foreground text-[9px] font-mono"
+                          x="-79"
+                          y="64"
+                          className="fill-muted-foreground text-[9.5px] font-mono font-medium"
                         >
-                          L: ₹{hoveredPoint.low.toFixed(3)} · H: ₹{hoveredPoint.high.toFixed(3)}
-                        </text>
-
-                        {/* Coordinate Indicator Tag */}
-                        <text
-                          x="76"
-                          y="58"
-                          textAnchor="end"
-                          className="fill-accent text-[9px] font-mono font-semibold"
-                        >
-                          (X:{hoveredPoint.date.slice(5)}, Y:₹{hoveredPoint.rate.toFixed(2)})
+                          Low: ₹{hoveredPoint.low.toFixed(3)}  ·  High: ₹{hoveredPoint.high.toFixed(3)}
                         </text>
                       </g>
                     </g>
