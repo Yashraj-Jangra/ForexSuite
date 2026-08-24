@@ -269,7 +269,12 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* User Footer Card */}
       <div className="p-3 border-t border-border">
         <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
+          <Link
+            href="/settings/account"
+            onClick={onClose}
+            title="Manage your account & security"
+            className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+          >
             <div className="size-8 rounded-full bg-accent/20 text-accent font-bold text-xs flex items-center justify-center shrink-0">
               {user?.name ? user.name[0]?.toUpperCase() : 'U'}
             </div>
@@ -277,7 +282,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               <p className="text-xs font-bold text-foreground truncate leading-tight">{user?.name || 'Account'}</p>
               <p className="text-[10px] text-muted-foreground truncate leading-tight mt-0.5">{user?.email || 'Logged in'}</p>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-1 shrink-0">
             <button

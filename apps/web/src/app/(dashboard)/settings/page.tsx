@@ -1,8 +1,39 @@
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
-import { ShieldCheck, RefreshCw, Palette, ArrowRight } from 'lucide-react';
+import {
+  ShieldCheck,
+  RefreshCw,
+  Palette,
+  ArrowRight,
+  User,
+  Building2,
+  Users,
+  Mail,
+  Database,
+} from 'lucide-react';
 
 const SETTINGS_SECTIONS = [
+  {
+    href: '/settings/account',
+    label: 'Account & Security',
+    desc: 'Manage your name, phone number, designation, role permissions, and active device sessions.',
+    icon: User,
+    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+  },
+  {
+    href: '/settings/profile',
+    label: 'Company Profile & Invoice Styles',
+    desc: 'Customize RBI licence, GSTIN/CIN, upload brand logo, and select from 5 PDF invoice templates.',
+    icon: Building2,
+    color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+  },
+  {
+    href: '/settings/team',
+    label: 'Team & RBAC Access',
+    desc: 'Invite accountants, operators, and compliance officers with role-based permission matrices.',
+    icon: Users,
+    color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+  },
   {
     href: '/settings/compliance',
     label: 'Compliance & Modules',
@@ -11,11 +42,25 @@ const SETTINGS_SECTIONS = [
     color: 'text-purple-600 dark:text-purple-400 bg-purple-500/10',
   },
   {
+    href: '/settings/email',
+    label: 'Email & SMTP Gateway',
+    desc: 'Configure VaultBill cloud delivery, 1-click Gmail OAuth, or custom corporate SMTP.',
+    icon: Mail,
+    color: 'text-rose-600 dark:text-rose-400 bg-rose-500/10',
+  },
+  {
+    href: '/settings/backups',
+    label: 'Automated Backups & Storage',
+    desc: 'Multi-target encryption backups to local disk, Google Drive OAuth, or AWS S3 buckets.',
+    icon: Database,
+    color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-500/10',
+  },
+  {
     href: '/settings/rates',
     label: 'Exchange Rates & Sync',
     desc: 'Configure automated RBI Reference rate synchronization schedules and on-demand cache refresh.',
     icon: RefreshCw,
-    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+    color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10',
   },
   {
     href: '/settings/appearance',
@@ -26,14 +71,13 @@ const SETTINGS_SECTIONS = [
   },
 ];
 
-
 export default function SettingsPage() {
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-4xl pb-12">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Workspace Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Workspace &amp; Account Settings</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Configure statutory compliance engines, currency feeds, and UI customization.
+          Configure statutory compliance engines, personal account details, multi-channel email, and brand styling.
         </p>
       </div>
 

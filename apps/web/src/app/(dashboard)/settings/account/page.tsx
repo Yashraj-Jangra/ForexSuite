@@ -1,0 +1,459 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Container } from '@/components/ui/container';
+import {
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  Shield,
+  Clock,
+  Laptop,
+  CheckCircle2,
+  XCircle,
+  Upload,
+  Calendar,
+  KeyRound,
+  ShieldAlert,
+  Globe,
+  LogOut,
+  Save,
+  RefreshCw,
+  Sparkles,
+} from 'lucide-react';
+
+interface AccountData {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  designation: string | null;
+  image: string | null;
+  isSuperAdmin: boolean;
+  role: string;
+  joinedAt: string;
+  createdAt: string;
+  lastAccessedAt: string;
+  lastIpAddress: string | null;
+  lastUserAgent: string | null;
+}
+
+interface SessionItem {
+  id: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const ROLE_BADGES: Record<string, { label: string; color: string }> = {
+  owner: { label: 'Workspace Owner', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  admin: { label: 'Administrator', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  accountant: { label: 'Compliance & Accountant', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  viewer: { label: 'Read-Only Viewer', color: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20' },
+  member: { label: 'Team Member', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+};
+
+function formatRelativeTime(dateStr: string): string {
+  try {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const diffSecs = Math.floor(diffMs / 1000);
+    if (diffSecs < 60) return 'Just now';
+    const diffMins = Math.floor(diffSecs / 60);
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  } catch {
+    return dateStr;
+  }
+}
+
+function parseBrowserDevice(userAgent: string | null): string {
+  if (!userAgent) return 'Web Browser';
+  if (userAgent.includes('Windows')) return 'Windows PC';
+  if (userAgent.includes('Macintosh') || userAgent.includes('Mac OS')) return 'MacBook / macOS';
+  if (userAgent.includes('iPhone')) return 'iPhone';
+  if (userAgent.includes('Android')) return 'Android Device';
+  if (userAgent.includes('Linux')) return 'Linux Desktop';
+  return 'Desktop Device';
+}
+
+export default function AccountSettingsPage() {
+  const [account, setAccount] = useState<AccountData | null>(null);
+  const [sessions, setSessions] = useState<SessionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  // Form State
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [designation, setDesignation] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function showToast(msg: string, ok: boolean) {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 4000);
+  }
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [accRes, sessRes] = await Promise.all([
+        fetch('/api/trpc/account.get', { credentials: 'include' }),
+        fetch('/api/trpc/account.sessions', { credentials: 'include' }),
+      ]);
+      const accJson = await accRes.json();
+      const sessJson = await sessRes.json();
+
+      const accData = accJson?.result?.data;
+      if (accData) {
+        setAccount(accData);
+        setName(accData.name || '');
+        setPhone(accData.phone || '');
+        setDesignation(accData.designation || '');
+        setImage(accData.image || null);
+      }
+
+      const sessList = sessJson?.result?.data || [];
+      setSessions(sessList);
+    } catch {
+      /* ignore */
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  function handleAvatarUpload(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setImage(result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch('/api/trpc/account.update', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          phone: phone || undefined,
+          designation: designation || undefined,
+          image: image || undefined,
+        }),
+      });
+      if (res.ok) {
+        showToast('Account details updated successfully', true);
+        await loadData();
+      } else {
+        showToast('Failed to update account', false);
+      }
+    } catch {
+      showToast('Network error while saving', false);
+    }
+    setSaving(false);
+  }
+
+  async function handleRevokeSession(sessionId: string) {
+    try {
+      const res = await fetch('/api/trpc/account.revokeSession', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sessionId),
+      });
+      if (res.ok) {
+        showToast('Session terminated', true);
+        loadData();
+      }
+    } catch {
+      showToast('Failed to terminate session', false);
+    }
+  }
+
+  const roleInfo = (account?.role && ROLE_BADGES[account.role]) ? ROLE_BADGES[account.role]! : ROLE_BADGES['member']!;
+
+  const initials = account?.name
+    ? account.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : 'VB';
+
+  return (
+    <Container size="md" className="space-y-8 pb-16">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-12 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold shadow-2xl animate-in slide-in-from-top-2 ${
+            toast.ok
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+          }`}
+        >
+          {toast.ok ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <User className="size-6 text-accent" />
+            Personal Account &amp; Security
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage your personal profile, contact information, role access, and active login sessions.
+          </p>
+        </div>
+        <Button onClick={handleSaveProfile} disabled={saving || loading} className="gap-1.5 shrink-0">
+          <Save className="size-4" />
+          <span>{saving ? 'Saving...' : 'Save Profile'}</span>
+        </Button>
+      </div>
+
+      {/* ─── SECTION 1: USER IDENTITY HERO CARD ─── */}
+      <Card padding="lg" className="border-accent/30 bg-accent/5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          {/* Avatar Upload */}
+          <div className="relative group shrink-0">
+            {image ? (
+              <img
+                src={image}
+                alt={name || 'Avatar'}
+                className="size-20 rounded-2xl object-cover border-2 border-border shadow-md"
+              />
+            ) : (
+              <div className="size-20 rounded-2xl bg-accent/20 text-accent text-2xl font-bold flex items-center justify-center border-2 border-border shadow-md">
+                {initials}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-2xl flex flex-col items-center justify-center gap-1 transition-opacity text-[10px] font-semibold"
+            >
+              <Upload className="size-4" />
+              <span>Change</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleAvatarUpload(file);
+              }}
+            />
+          </div>
+
+          {/* User Meta */}
+          <div className="flex-1 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-bold text-foreground">{account?.name || 'User Profile'}</h2>
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase ${roleInfo.color}`}>
+                {roleInfo.label}
+              </span>
+              {account?.isSuperAdmin && (
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 uppercase flex items-center gap-1">
+                  <ShieldAlert className="size-3" />
+                  <span>Platform Super Admin</span>
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-mono">
+              <Mail className="size-3.5 text-accent" />
+              <span>{account?.email}</span>
+            </p>
+            {account?.designation && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Briefcase className="size-3.5 text-muted-foreground" />
+                <span>{account.designation}</span>
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* ─── SECTION 2: EDIT PROFILE FORM ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Edit Account Details</h2>
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Input
+              label="Full Legal Name *"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. John Doe"
+              required
+            />
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground block mb-1">Email Address</label>
+              <div className="relative">
+                <Input
+                  value={account?.email || ''}
+                  disabled
+                  className="bg-muted/40 font-mono text-muted-foreground cursor-not-allowed"
+                />
+                <span className="absolute right-3 top-2.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                  Verified
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Input
+              label="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+91 98765 43210"
+            />
+            <Input
+              label="Job Designation / Title"
+              value={designation}
+              onChange={(e) => setDesignation(e.target.value)}
+              placeholder="e.g. Chief Compliance Officer / Senior Forex Dealer"
+            />
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button type="submit" size="sm" disabled={saving} className="gap-1.5">
+              {saving ? <RefreshCw className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+              <span>Save Changes</span>
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      {/* ─── SECTION 3: ACCESS TELEMETRY & TIMELINES ─── */}
+      <Card padding="lg" className="space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Access Timeline &amp; Credentials Snapshot</h2>
+        <div className="grid sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-semibold text-[11px]">
+              <Clock className="size-3.5 text-accent" />
+              <span>Last Accessed</span>
+            </div>
+            <p className="font-bold text-foreground text-sm">
+              {account?.lastAccessedAt ? formatRelativeTime(account.lastAccessedAt) : '—'}
+            </p>
+            <p className="text-[10px] text-muted-foreground font-mono">
+              {account?.lastAccessedAt ? new Date(account.lastAccessedAt).toLocaleString() : ''}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-semibold text-[11px]">
+              <Calendar className="size-3.5 text-emerald-400" />
+              <span>Account Created</span>
+            </div>
+            <p className="font-bold text-foreground text-sm">
+              {account?.createdAt ? new Date(account.createdAt).toLocaleDateString() : '—'}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              Joined Workspace: {account?.joinedAt ? new Date(account.joinedAt).toLocaleDateString() : '—'}
+            </p>
+          </div>
+
+          <div className="p-3 rounded-xl bg-card border border-border space-y-1">
+            <div className="flex items-center gap-1.5 text-muted-foreground font-semibold text-[11px]">
+              <Globe className="size-3.5 text-blue-400" />
+              <span>Last IP &amp; Device</span>
+            </div>
+            <p className="font-bold text-foreground text-sm font-mono truncate">
+              {account?.lastIpAddress || '127.0.0.1 (Local)'}
+            </p>
+            <p className="text-[10px] text-muted-foreground truncate">
+              {parseBrowserDevice(account?.lastUserAgent || null)}
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* ─── SECTION 4: ACTIVE SESSIONS & DEVICE MANAGEMENT ─── */}
+      <Card padding="lg" className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Active Login Sessions</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Devices and browsers currently authenticated to your account.
+            </p>
+          </div>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+            {sessions.length} Active {sessions.length === 1 ? 'Session' : 'Sessions'}
+          </span>
+        </div>
+
+        <div className="divide-y divide-border/60">
+          {sessions.map((sess, idx) => {
+            const isCurrentDevice = idx === 0;
+            return (
+              <div key={sess.id} className="py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-muted text-muted-foreground">
+                    <Laptop className="size-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-foreground">{parseBrowserDevice(sess.userAgent)}</p>
+                      {isCurrentDevice && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          Current Device
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
+                      <span className="font-mono">IP: {sess.ipAddress || '127.0.0.1'}</span>
+                      <span>•</span>
+                      <span>Last active: {formatRelativeTime(sess.updatedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {!isCurrentDevice && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRevokeSession(sess.id)}
+                    className="text-[11px] h-7 px-2 text-rose-400 hover:text-rose-500 border-rose-500/30"
+                  >
+                    <LogOut className="size-3 mr-1" />
+                    Terminate
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+
+          {sessions.length === 0 && (
+            <div className="py-6 text-center text-xs text-muted-foreground">
+              No additional active sessions detected.
+            </div>
+          )}
+        </div>
+      </Card>
+    </Container>
+  );
+}
