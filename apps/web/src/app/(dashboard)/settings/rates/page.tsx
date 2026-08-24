@@ -302,12 +302,33 @@ export default function RateSettingsPage() {
     return { path: pathD, area: areaD, points: coords, gridLines, labelPoints };
   }, [historyData]);
 
-  // Handle Chart Hover
+  // Handle Chart Hover with Native W3C SVG Screen Matrix Transformation (100% Precision)
   function handleChartMouseMove(e: React.MouseEvent<SVGSVGElement>) {
-    if (!chartSvgRef.current || chartSvgPath.points.length === 0) return;
-    const rect = chartSvgRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const svgX = (mouseX / rect.width) * SVG_WIDTH;
+    const svg = chartSvgRef.current;
+    if (!svg || chartSvgPath.points.length === 0) return;
+
+    let svgX = 0;
+    let svgY = 0;
+
+    try {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const transformed = pt.matrixTransform(ctm.inverse());
+        svgX = transformed.x;
+        svgY = transformed.y;
+      } else {
+        const rect = svg.getBoundingClientRect();
+        svgX = ((e.clientX - rect.left) / rect.width) * SVG_WIDTH;
+        svgY = ((e.clientY - rect.top) / rect.height) * SVG_HEIGHT;
+      }
+    } catch {
+      const rect = svg.getBoundingClientRect();
+      svgX = ((e.clientX - rect.left) / rect.width) * SVG_WIDTH;
+      svgY = ((e.clientY - rect.top) / rect.height) * SVG_HEIGHT;
+    }
 
     // Find nearest point
     let closest = chartSvgPath.points[0]!;
@@ -693,10 +714,10 @@ export default function RateSettingsPage() {
                     </text>
                   ))}
 
-                  {/* Crosshair Line & Glowing Point on Hover */}
+                  {/* Dual-Axis X & Y Coordinate Crosshairs, Badges & Floating Tooltip */}
                   {hoveredPoint && (
                     <g className="pointer-events-none">
-                      {/* Vertical Crosshair Line */}
+                      {/* Vertical (X-Axis) Crosshair Line */}
                       <line
                         x1={hoveredPoint.x}
                         y1={PADDING_TOP}
@@ -707,45 +728,107 @@ export default function RateSettingsPage() {
                         strokeWidth="1.5"
                       />
 
-                      {/* Glowing Dot on Curve */}
+                      {/* Horizontal (Y-Axis) Crosshair Line */}
+                      <line
+                        x1={PADDING_X}
+                        y1={hoveredPoint.y}
+                        x2={SVG_WIDTH - PADDING_X}
+                        y2={hoveredPoint.y}
+                        stroke="hsl(var(--accent))"
+                        strokeDasharray="3 3"
+                        strokeWidth="1.2"
+                        strokeOpacity="0.8"
+                      />
+
+                      {/* X-Axis Bottom Date Badge */}
+                      <g transform={`translate(${Math.min(Math.max(hoveredPoint.x, 38), SVG_WIDTH - 38)}, ${SVG_HEIGHT - PADDING_BOTTOM + 8})`}>
+                        <rect
+                          x="-36"
+                          y="0"
+                          width="72"
+                          height="20"
+                          rx="6"
+                          className="fill-foreground"
+                        />
+                        <text
+                          x="0"
+                          y="13"
+                          textAnchor="middle"
+                          className="fill-background text-[10px] font-mono font-bold"
+                        >
+                          {hoveredPoint.date.slice(5)}
+                        </text>
+                      </g>
+
+                      {/* Y-Axis Right Price Badge */}
+                      <g transform={`translate(${SVG_WIDTH - PADDING_X + 4}, ${hoveredPoint.y - 9})`}>
+                        <rect
+                          x="0"
+                          y="0"
+                          width="64"
+                          height="18"
+                          rx="5"
+                          className="fill-accent"
+                        />
+                        <text
+                          x="32"
+                          y="12"
+                          textAnchor="middle"
+                          className="fill-accent-foreground text-[9px] font-mono font-bold"
+                        >
+                          ₹{hoveredPoint.rate.toFixed(2)}
+                        </text>
+                      </g>
+
+                      {/* Dual Radar Target Anchor Dot on Curve */}
                       <circle
                         cx={hoveredPoint.x}
                         cy={hoveredPoint.y}
-                        r="6"
+                        r="11"
+                        stroke="hsl(var(--accent))"
+                        strokeWidth="1.5"
+                        strokeOpacity="0.4"
                         fill="hsl(var(--accent))"
-                        stroke="hsl(var(--background))"
+                        fillOpacity="0.15"
+                      />
+                      <circle
+                        cx={hoveredPoint.x}
+                        cy={hoveredPoint.y}
+                        r="5"
+                        fill="hsl(var(--accent))"
+                        stroke="hsl(var(--card))"
                         strokeWidth="2.5"
                       />
 
-                      {/* Pure SVG Tooltip Bubble with Dynamic Boundary Clamping */}
+                      {/* Rich Floating SVG Tooltip Card */}
                       <g
                         transform={`translate(${Math.min(
-                          Math.max(hoveredPoint.x, 90),
-                          SVG_WIDTH - 90,
-                        )}, ${hoveredPoint.y < 85 ? hoveredPoint.y + 16 : hoveredPoint.y - 78})`}
+                          Math.max(hoveredPoint.x, 95),
+                          SVG_WIDTH - 95,
+                        )}, ${hoveredPoint.y < 90 ? hoveredPoint.y + 18 : hoveredPoint.y - 84})`}
                       >
                         {/* Tooltip Card Background */}
                         <rect
-                          x="-80"
+                          x="-90"
                           y="0"
-                          width="160"
-                          height="66"
-                          rx="10"
+                          width="180"
+                          height="74"
+                          rx="12"
                           className="fill-card stroke-border"
-                          strokeWidth="1.2"
-                          filter="drop-shadow(0 6px 14px rgba(0,0,0,0.18))"
+                          strokeWidth="1.4"
+                          filter="drop-shadow(0 8px 18px rgba(0,0,0,0.22))"
                         />
 
                         {/* Date & Movement Header */}
                         <text
-                          x="-68"
+                          x="-76"
                           y="18"
                           className="fill-muted-foreground text-[10px] font-sans font-semibold"
                         >
-                          {hoveredPoint.date}
+                          {historyData?.currency?.flag || '🌐'} {selectedChartCode}/INR · {hoveredPoint.date}
                         </text>
                         <text
-                          x="68"
+                          x="76"
                           y="18"
                           textAnchor="end"
                           className={`text-[10px] font-sans font-bold ${
@@ -760,9 +843,9 @@ export default function RateSettingsPage() {
 
                         {/* Divider */}
                         <line
-                          x1="-68"
+                          x1="-76"
                           y1="24"
-                          x2="68"
+                          x2="76"
                           y2="24"
                           className="stroke-border/60"
                           strokeWidth="0.8"
@@ -770,20 +853,30 @@ export default function RateSettingsPage() {
 
                         {/* Rate in INR */}
                         <text
-                          x="-68"
-                          y="42"
-                          className="fill-foreground text-[13px] font-mono font-bold"
+                          x="-76"
+                          y="43"
+                          className="fill-foreground text-[14px] font-mono font-extrabold"
                         >
                           ₹{hoveredPoint.rate.toFixed(4)}
                         </text>
 
                         {/* High / Low Range */}
                         <text
-                          x="-68"
-                          y="56"
+                          x="-76"
+                          y="58"
                           className="fill-muted-foreground text-[9px] font-mono"
                         >
                           L: ₹{hoveredPoint.low.toFixed(3)} · H: ₹{hoveredPoint.high.toFixed(3)}
+                        </text>
+
+                        {/* Coordinate Indicator Tag */}
+                        <text
+                          x="76"
+                          y="58"
+                          textAnchor="end"
+                          className="fill-accent text-[9px] font-mono font-semibold"
+                        >
+                          (X:{hoveredPoint.date.slice(5)}, Y:₹{hoveredPoint.rate.toFixed(2)})
                         </text>
                       </g>
                     </g>
