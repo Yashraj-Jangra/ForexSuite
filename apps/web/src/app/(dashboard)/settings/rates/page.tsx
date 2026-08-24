@@ -563,12 +563,14 @@ export default function RateSettingsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Chart Stats Snapshot */}
+              {/* Chart Stats Snapshot (Reacts dynamically to hover) */}
               <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">Current Spot Rate</span>
+                  <span className="text-[11px] text-muted-foreground block font-medium">
+                    {hoveredPoint ? `Rate on ${hoveredPoint.date}` : 'Current Spot Rate'}
+                  </span>
                   <span className="text-2xl font-bold text-foreground font-mono">
-                    ₹{historyData?.currentRate ? historyData.currentRate.toFixed(4) : '86.8500'}
+                    ₹{(hoveredPoint ? hoveredPoint.rate : (historyData?.currentRate ?? 86.85)).toFixed(4)}
                   </span>
                 </div>
 
@@ -586,62 +588,35 @@ export default function RateSettingsPage() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-muted-foreground block font-medium">Net Drift</span>
+                    <span className="text-[10px] text-muted-foreground block font-medium">
+                      {hoveredPoint ? 'Daily Drift' : 'Net Drift'}
+                    </span>
                     <span
                       className={`text-xs font-bold font-mono inline-flex items-center gap-1 ${
-                        (historyData?.overallChangePct ?? 0) >= 0
+                        (hoveredPoint ? hoveredPoint.changePct : (historyData?.overallChangePct ?? 0)) >= 0
                           ? 'text-emerald-500 dark:text-emerald-400'
                           : 'text-rose-500 dark:text-rose-400'
                       }`}
                     >
-                      {(historyData?.overallChangePct ?? 0) >= 0 ? (
+                      {(hoveredPoint ? hoveredPoint.changePct : (historyData?.overallChangePct ?? 0)) >= 0 ? (
                         <TrendingUp className="size-3.5" />
                       ) : (
                         <TrendingDown className="size-3.5" />
                       )}
-                      {historyData?.overallChangePct ? `${historyData.overallChangePct > 0 ? '+' : ''}${historyData.overallChangePct.toFixed(2)}%` : '0.00%'}
+                      {hoveredPoint
+                        ? `${hoveredPoint.changePct >= 0 ? '+' : ''}${hoveredPoint.changePct.toFixed(2)}%`
+                        : `${(historyData?.overallChangePct ?? 0) >= 0 ? '+' : ''}${(historyData?.overallChangePct ?? 0).toFixed(2)}%`}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Chart SVG Graphic with Hover Crosshair and Details */}
-              <div className="relative w-full h-64 pt-2">
-                {/* Floating Hover Tooltip */}
-                {hoveredPoint && (
-                  <div
-                    className="absolute z-20 pointer-events-none px-3.5 py-2.5 rounded-xl bg-card border border-border shadow-xl backdrop-blur-md text-xs font-mono space-y-1 transform -translate-x-1/2 -translate-y-full transition-all duration-75"
-                    style={{
-                      left: `${(hoveredPoint.x / SVG_WIDTH) * 100}%`,
-                      top: `${(hoveredPoint.y / SVG_HEIGHT) * 100 - 4}%`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between gap-3 text-[10px] text-muted-foreground font-sans font-semibold border-b border-border/50 pb-1">
-                      <span>{hoveredPoint.date}</span>
-                      <span
-                        className={`font-bold ${
-                          hoveredPoint.changePct >= 0
-                            ? 'text-emerald-500 dark:text-emerald-400'
-                            : 'text-rose-500 dark:text-rose-400'
-                        }`}
-                      >
-                        {hoveredPoint.changePct >= 0 ? '+' : ''}{hoveredPoint.changePct.toFixed(2)}%
-                      </span>
-                    </div>
-                    <div className="text-sm font-bold text-foreground">
-                      ₹{hoveredPoint.rate.toFixed(4)}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-                      <span>L: ₹{hoveredPoint.low.toFixed(3)}</span>
-                      <span>H: ₹{hoveredPoint.high.toFixed(3)}</span>
-                    </div>
-                  </div>
-                )}
-
+              {/* Chart SVG Graphic with 100% Coordinated SVG Hover & Crosshair */}
+              <div className="w-full h-64 sm:h-72">
                 <svg
                   ref={chartSvgRef}
                   viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-                  className="w-full h-full overflow-visible cursor-crosshair"
+                  className="w-full h-full block select-none cursor-crosshair overflow-visible"
                   onMouseMove={handleChartMouseMove}
                   onMouseLeave={handleChartMouseLeave}
                 >
@@ -651,6 +626,16 @@ export default function RateSettingsPage() {
                       <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
+
+                  {/* Invisible Hit Testing Overlay */}
+                  <rect
+                    x="0"
+                    y="0"
+                    width={SVG_WIDTH}
+                    height={SVG_HEIGHT}
+                    fill="transparent"
+                    className="cursor-crosshair"
+                  />
 
                   {/* Horizontal Grid lines with value labels */}
                   {chartSvgPath.gridLines.map((gl, i) => (
@@ -708,9 +693,10 @@ export default function RateSettingsPage() {
                     </text>
                   ))}
 
-                  {/* Crosshair Line & Point on Hover */}
+                  {/* Crosshair Line & Glowing Point on Hover */}
                   {hoveredPoint && (
-                    <g>
+                    <g className="pointer-events-none">
+                      {/* Vertical Crosshair Line */}
                       <line
                         x1={hoveredPoint.x}
                         y1={PADDING_TOP}
@@ -720,6 +706,8 @@ export default function RateSettingsPage() {
                         strokeDasharray="3 3"
                         strokeWidth="1.5"
                       />
+
+                      {/* Glowing Dot on Curve */}
                       <circle
                         cx={hoveredPoint.x}
                         cy={hoveredPoint.y}
@@ -727,8 +715,77 @@ export default function RateSettingsPage() {
                         fill="hsl(var(--accent))"
                         stroke="hsl(var(--background))"
                         strokeWidth="2.5"
-                        className="shadow-md"
                       />
+
+                      {/* Pure SVG Tooltip Bubble with Dynamic Boundary Clamping */}
+                      <g
+                        transform={`translate(${Math.min(
+                          Math.max(hoveredPoint.x, 90),
+                          SVG_WIDTH - 90,
+                        )}, ${hoveredPoint.y < 85 ? hoveredPoint.y + 16 : hoveredPoint.y - 78})`}
+                      >
+                        {/* Tooltip Card Background */}
+                        <rect
+                          x="-80"
+                          y="0"
+                          width="160"
+                          height="66"
+                          rx="10"
+                          className="fill-card stroke-border"
+                          strokeWidth="1.2"
+                          filter="drop-shadow(0 6px 14px rgba(0,0,0,0.18))"
+                        />
+
+                        {/* Date & Movement Header */}
+                        <text
+                          x="-68"
+                          y="18"
+                          className="fill-muted-foreground text-[10px] font-sans font-semibold"
+                        >
+                          {hoveredPoint.date}
+                        </text>
+                        <text
+                          x="68"
+                          y="18"
+                          textAnchor="end"
+                          className={`text-[10px] font-sans font-bold ${
+                            hoveredPoint.changePct >= 0
+                              ? 'fill-emerald-500 dark:fill-emerald-400'
+                              : 'fill-rose-500 dark:fill-rose-400'
+                          }`}
+                        >
+                          {hoveredPoint.changePct >= 0 ? '+' : ''}
+                          {hoveredPoint.changePct.toFixed(2)}%
+                        </text>
+
+                        {/* Divider */}
+                        <line
+                          x1="-68"
+                          y1="24"
+                          x2="68"
+                          y2="24"
+                          className="stroke-border/60"
+                          strokeWidth="0.8"
+                        />
+
+                        {/* Rate in INR */}
+                        <text
+                          x="-68"
+                          y="42"
+                          className="fill-foreground text-[13px] font-mono font-bold"
+                        >
+                          ₹{hoveredPoint.rate.toFixed(4)}
+                        </text>
+
+                        {/* High / Low Range */}
+                        <text
+                          x="-68"
+                          y="56"
+                          className="fill-muted-foreground text-[9px] font-mono"
+                        >
+                          L: ₹{hoveredPoint.low.toFixed(3)} · H: ₹{hoveredPoint.high.toFixed(3)}
+                        </text>
+                      </g>
                     </g>
                   )}
                 </svg>
