@@ -1,5 +1,27 @@
 # todo.md — VaultBill Project Tracker
 
+## Session 8 — 2026-08-24 (Exchange Rates Engine, Live Forex Studio & Historical Charts)
+
+### ✅ Completed — Exchange Rates Accuracy & Live Sync Studio
+- **Indian Standard Forex Notation**: Standardized all exchange rates across VaultBill as `1 Foreign Currency Unit = INR Price` (e.g. `1 USD = ₹86.85`, `1 EUR = ₹94.40`, `1 AED = ₹23.65`).
+- **Multi-Provider Live Sync Engine (`apps/api`)**:
+  - Live upstream fetch from `open.er-api.com` with `api.frankfurter.app` fallback.
+  - Calculated 24h % change, 24h high/low, inverse rates, and 7/30/90-day time-series history generator.
+- **Redesigned Exchange Rates Studio (`apps/web/src/app/(dashboard)/settings/rates/page.tsx`)**:
+  - Live status indicator & last sync relative time
+  - Interactive SVG historical rate trend chart with 7D / 30D / 90D timeframes
+  - Searchable 25+ global currency pairs matrix with 24h change indicators
+  - Two-way interactive currency conversion calculator with quick swap
+  - Sync frequency schedule preferences (15m, 1h, 6h, daily)
+- **Live Dashboard Ticker (`apps/web/src/app/(dashboard)/dashboard/page.tsx`)**:
+  - Dynamic spot rate ticker powered directly by database quotes
+  - Expanded quick converter with 25+ global currency options
+- **Verification & Local Commits**:
+  - `@vaultbill/api`, `@vaultbill/web`, `@vaultbill/db` typechecks passing with 0 errors.
+  - Commit: `✨ overhaul exchange rates engine with live sync, 30d history charts, and dashboard ticker`
+
+---
+
 ## Session 7 — 2026-08-24 (Split-Screen Auth Redesign & Auto-Redirect Engine)
 
 ### ✅ Completed — Authentication Overhaul & Visual Showcase
