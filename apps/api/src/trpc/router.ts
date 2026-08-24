@@ -34,7 +34,7 @@ export const appRouter = router({
 
   me: protectedProcedure.query(async ({ ctx }) => {
     const [found] = await db.select().from(user).where(eq(user.id, ctx.userId)).limit(1);
-    return found ?? null;
+    return found ? { ...found, isSuperAdmin: ctx.isSuperAdmin } : null;
   }),
 
   tenants: protectedProcedure.query(async ({ ctx }) => {

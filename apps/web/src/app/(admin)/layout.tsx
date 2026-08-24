@@ -54,27 +54,34 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     const imp = localStorage.getItem('vaultbill_impersonate_tenant');
     if (imp) setImpersonatingTenant(imp);
 
-    fetch('/api/trpc/me', { credentials: 'include' })
-      .then((r) => r.json())
-      .then((j) => {
-        const u = j?.result?.data;
-        if (u) {
-          setUser(u);
-          // Verify super admin permissions
-          fetch('/api/trpc/admin.health.overview', { credentials: 'include' })
-            .then((r) => {
-              if (r.status === 403 || r.status === 401) {
-                setUnauthorized(true);
-              }
-            })
-            .catch(() => setUnauthorized(true));
-        } else {
-          setUnauthorized(true);
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/trpc/me', { credentials: 'include' });
+        if (!res.ok) {
+          router.push('/login');
+          return;
         }
-      })
-      .catch(() => setUnauthorized(true))
-      .finally(() => setChecking(false));
-  }, []);
+        const json = await res.json();
+        const u = json?.result?.data;
+        if (!u) {
+          router.push('/login');
+          return;
+        }
+        setUser(u);
+        if (!u.isSuperAdmin) {
+          setUnauthorized(true);
+        } else {
+          setUnauthorized(false);
+        }
+      } catch {
+        setUnauthorized(true);
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    checkAuth();
+  }, [router]);
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -89,41 +96,46 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center text-white space-y-4">
         <div className="size-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center animate-pulse">
           <ShieldAlert className="size-6 text-rose-500" />
         </div>
-        <p className="text-sm font-semibold tracking-wider text-slate-300">Authenticating Super Admin session...</p>
+        <p className="text-sm font-semibold tracking-wider text-neutral-300">Authenticating Super Admin session...</p>
       </div>
     );
   }
 
   if (unauthorized) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
-        <div className="max-w-md w-full bg-slate-900 border border-rose-500/30 rounded-2xl p-8 space-y-5 shadow-2xl">
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4 text-center">
+        <div className="max-w-md w-full bg-neutral-900 border border-rose-500/30 rounded-2xl p-8 space-y-5 shadow-2xl">
           <div className="size-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400">
             <AlertTriangle className="size-7" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white tracking-tight">Restricted Area</h1>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              The <strong>Super Admin Control Plane</strong> is strictly restricted to platform maintainers. Your account does not have master administrative privileges.
+            <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+              The <strong>Super Admin Control Plane</strong> is strictly restricted to platform maintainers.
             </p>
+            {user?.email && (
+              <div className="mt-3 p-2.5 rounded-xl bg-neutral-800/80 border border-neutral-700 text-xs text-neutral-300">
+                Logged in as: <strong className="text-white font-mono">{user.email}</strong>
+              </div>
+            )}
           </div>
           <div className="pt-2 flex flex-col gap-2">
             <button
               onClick={() => router.push('/dashboard')}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold transition-colors flex items-center justify-center gap-2"
             >
               <span>Return to User Dashboard</span>
               <ExternalLink className="size-3.5" />
             </button>
             <button
               onClick={handleSignOut}
-              className="w-full py-2 px-4 rounded-xl text-xs font-medium text-slate-400 hover:text-rose-400 transition-colors"
+              className="w-full py-2 px-4 rounded-xl text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
             >
-              Sign out and switch accounts
+              Sign out and log in as jangrayash1505@gmail.com
             </button>
           </div>
         </div>
