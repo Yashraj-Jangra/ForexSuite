@@ -48,11 +48,16 @@ export const exchangeRates = pgTable('exchange_rates', {
   baseCurrency: text('base_currency').notNull(),
   targetCurrency: text('target_currency').notNull(),
   rate: numeric('rate').notNull(),
+  inverseRate: numeric('inverse_rate'),
+  change24h: numeric('change_24h'),
+  high24h: numeric('high_24h'),
+  low24h: numeric('low_24h'),
   source: text('source').notNull(),
   fetchedAt: timestamp('fetched_at').defaultNow().notNull(),
 }, (table) => ({
   baseCurrencyIdx: index('exchange_rates_base_currency_idx').on(table.baseCurrency),
   targetCurrencyIdx: index('exchange_rates_target_currency_idx').on(table.targetCurrency),
+  fetchedAtIdx: index('exchange_rates_fetched_at_idx').on(table.fetchedAt),
 }));
 
 export const invoices = pgTable('invoices', {
