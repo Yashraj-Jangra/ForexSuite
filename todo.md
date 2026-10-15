@@ -1,5 +1,31 @@
 # todo.md — VaultBill Project Tracker
 
+## Session 10 — 2026-08-25 (Comprehensive Documentation Suite, AI Agentic Workflows & Open Source Standards)
+
+### ✅ Completed — Full Open Source Documentation & Engineering Governance
+- **Root Documentation**:
+  - `README.md`: Complete project overview, multi-currency invoicing, 4-tier statutory RBI/FBIL forex engine, FEMA 270d, LRS TCS, e-FIRC, FLM-8, architecture ASCII & Mermaid diagrams, quickstart, Docker commands, scripts table.
+  - `ARCHITECTURE.md`: Deep technical specifications covering PostgreSQL schema-per-tenant isolation, tRPC pipelines, 4-tier forex hierarchy, Puppeteer PDF rendering, and statutory calculation formulas.
+  - `CONTRIBUTING.md`: Contributor guide, zero-error policy (`pnpm typecheck`, `pnpm lint`, `pnpm test`), Gitmoji commit conventions, clean minimal UI guidelines ("Less Div, Sleek & Focused", HSL tokens, Plus Jakarta Sans + JetBrains Mono), code good practices.
+  - `CODE_OF_CONDUCT.md`: Contributor Covenant v2.1.
+  - `SECURITY.md`: Security guarantees, multi-tenant physical isolation, session security, MinIO path scoping, disclosure SLA.
+  - `LICENSE`: Apache License 2.0.
+- **AI Agentic Workflows**:
+  - `AGENT_RULES.md`: 5 Pillars of Agentic Discipline (Zero-Error Verification Gate, Read-Before-Edit Protocol, Git Hygiene & Atomic Commits, Minimalist UI, Statutory Domain Invariants).
+  - `CLAUDE.md`: Universal quick-reference configuration for Claude Code and coding agents.
+  - `.pi/rules.md`: Dedicated runtime instructions for Pi agent harness.
+- **GitHub Repository Automation**:
+  - `.github/pull_request_template.md`: Verification checklist for PR submissions.
+  - `.github/ISSUE_TEMPLATE/bug_report.md` & `feature_request.md`: Standardized issue templates.
+- **Monorepo Package Documentation**:
+  - `apps/web/README.md`, `apps/api/README.md`, `apps/worker/README.md`
+  - `packages/db/README.md`, `packages/shared/README.md`, `packages/pdf/README.md`, `packages/config/README.md`
+- **Verification & Local Quality Gates**:
+  - `pnpm typecheck`: 8 successful out of 8 total tasks (0 errors).
+  - `pnpm --filter @vaultbill/shared test`: 23/23 tests passing (100% green).
+
+---
+
 ## Session 9 — 2026-08-24 (RBI/FBIL Official Exchange Rate Compliance Engine & Audit Infrastructure)
 
 ### ✅ Completed — RBI/FBIL Statutory Reference Rates & Source Transparency
